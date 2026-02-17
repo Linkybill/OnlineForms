@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "target": "es5",
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "declaration": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types", "./node_modules/@microsoft"],
+    "types": ["es6-promise", "webpack-env", "microsoft-ajax", "sharepoint"],
+    "lib": ["es2016", "es5", "es6", "ES2018", "dom", "es2015.collection"]
+  }
+}

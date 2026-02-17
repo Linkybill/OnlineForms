@@ -1,0 +1,37 @@
+export class FieldTypeNumbers {
+  public static Invalid: number = 0;
+  public static Integer: number = 1;
+  public static Text: number = 2;
+  public static Note: number = 3;
+  public static DateTime: number = 4;
+  public static Counter: number = 5;
+  public static Choice: number = 6;
+  public static Lookup: number = 7;
+  public static Boolean: number = 8;
+  public static Number: number = 9;
+  public static Currency: number = 10;
+  public static URL: number = 11;
+  public static Computed: number = 12;
+  public static Threading: number = 13;
+  public static Guid: number = 14;
+  public static MultiChoice: number = 15;
+  public static GridChoice: number = 16;
+  public static Calculated: number = 17;
+  public static File: number = 18;
+  public static Attachments: number = 19;
+  public static User: number = 20;
+  public static Recurrence: number = 21;
+  public static CrossProjectLink: number = 22;
+  public static ModStat: number = 23;
+  public static Error: number = 24;
+  public static ContentTypeId: number = 25;
+  public static PageSeparator: number = 26;
+  public static ThreadIndex: number = 27;
+  public static WorkflowStatus: number = 28;
+  public static AllDayEvent: number = 29;
+  public static WorkflowEventType: number = 30;
+  public static Geolocation: number = 31;
+  public static OutcomeChoice: number = 32;
+  public static Location: number = 33;
+  public static MaxItems: number = 34;
+}

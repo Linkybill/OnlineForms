@@ -1,0 +1,71 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/core-build/serve.schema.json",
+  "port": 4321,
+  "https": true,
+  "initialPage": "https://localhost:5432/workbench",
+  "api": {
+    "port": 5432,
+    "entryPath": "node_modules/@microsoft/sp-webpart-workbench/lib/api/"
+  },
+  "serveConfigurations": {
+    "default": {
+      "pageUrl": "http://smv01155.user.bg.vm/efav2/Formulartemplates/Forms/AllItems.aspx?loadSPFX=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js&customActions=%7B\"565fe5e5-9e6a-4450-a0ec-ccc8597b03e1\"%3A%7B\"location\"%3A\"ClientSideExtension.ListViewCommandSet.CommandBar\"%2C\"properties\"%3A%7B\"sampleTextOne\"%3A\"One%20item%20is%20selected%20in%20the%20list\"%2C\"sampleTextTwo\"%3A\"This%20command%20is%20always%20visible.\"%7D%7D%7D",
+      "customActions": {
+        "565fe5e5-9e6a-4450-a0ec-ccc8597b03e1": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    },
+    "formTemplateListActions": {
+      "pageUrl": "http://smv01155.user.bg.vm/efav2/Formulartemplates/Forms/AllItems.aspx?loadSPFX=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js&customActions=%7B\"565fe5e5-9e6a-4450-a0ec-ccc8597b03e1\"%3A%7B\"location\"%3A\"ClientSideExtension.ListViewCommandSet.CommandBar\"%2C\"properties\"%3A%7B\"sampleTextOne\"%3A\"One%20item%20is%20selected%20in%20the%20list\"%2C\"sampleTextTwo\"%3A\"This%20command%20is%20always%20visible.\"%7D%7D%7D",
+      "customActions": {
+        "565fe5e5-9e6a-4450-a0ec-ccc8597b03e1": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    },
+    "formTemplateContextMenues": {
+      "pageUrl": "https://contoso.sharepoint.com/sites/mySite/SitePages/myPage.aspx",
+      "customActions": {
+        "a506165e-3619-498e-8b99-b9f817a3c2af": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    },
+    "formInstanceContextMenuesCommandset": {
+      "pageUrl": "https://contoso.sharepoint.com/sites/mySite/SitePages/myPage.aspx",
+      "customActions": {
+        "39e7ab46-09f2-4b1e-a660-a94cdf42f716": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {
+            "sampleTextOne": "One item is selected in the list",
+            "sampleTextTwo": "This command is always visible."
+          }
+        }
+      }
+    },
+    "novaFormsAppCustomizer": {
+      "pageUrl": "https://contoso.sharepoint.com/sites/mySite/SitePages/myPage.aspx",
+      "customActions": {
+        "3c08907f-e984-408b-8ab3-6df1e68030e2": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {
+            "testMessage": "Test message"
+          }
+        }
+      }
+    }
+  }
+}

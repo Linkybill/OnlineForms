@@ -1,0 +1,24 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "NOVA-SharePoint-Forms",
+    "id": "2332bb35-b7e8-4fd2-8b7d-cd9909fe23e2",
+    "version": "8.0.161.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": false,
+    "features": [
+      {
+        "title": "NOVA.Forms.CustomActions",
+        "description": "Stellt Commands wie Neues Formular zur Verfügung.",
+        "id": "20c3eb22-800e-477d-904d-15539ce1ddb3",
+        "version": "2.0.0.8",
+        "assets": {
+          "elementManifests": ["elements.xml"]
+        }
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/NOVA-SharePoint-Forms.sppkg"
+  }
+}

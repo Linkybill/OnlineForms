@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/s-KaiNet/spfx-fast-serve/master/schema/config.1.1.schema.json",
+  "cli": {
+    "isLibraryComponent": false
+  },
+  "serve": {
+    "openUrl": "http://smv01155.user.bg.vm/efav2/Formulartemplates/Forms/AllItems.aspx?loadSPFX=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js&customActions=%7B\"565fe5e5-9e6a-4450-a0ec-ccc8597b03e1\"%3A%7B\"location\"%3A\"ClientSideExtension.ListViewCommandSet.CommandBar\"%2C\"properties\"%3A%7B\"sampleTextOne\"%3A\"One%20item%20is%20selected%20in%20the%20list\"%2C\"sampleTextTwo\"%3A\"This%20command%20is%20always%20visible.\"%7D%7D%7D"
+  }
+}

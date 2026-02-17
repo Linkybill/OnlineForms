@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<pnp:Provisioning xmlns:pnp="http://schemas.dev.office.com/PnP/2018/07/ProvisioningSchema">
+  <pnp:Preferences Generator="OfficeDevPnP.Core, Version=3.6.1902.0, Culture=neutral, PublicKeyToken=5e633289e95c321a" />
+  <pnp:Templates ID="CONTAINER-TEMPLATE-9BC1168789D048E0922E621DA3F582AA">
+    <pnp:ProvisioningTemplate ID="TEMPLATE-9BC1168789D048E0922E621DA3F582AA" Version="1" BaseSiteTemplate="STS#3" Scope="RootSite">
+      <pnp:SiteFields>
+        <Field Type="DateTime" DisplayName="Gültig  bis" Required="FALSE" EnforceUniqueValues="FALSE" Indexed="FALSE" Format="DateTime" Group="Formulartemplates" FriendlyDisplayFormat="Disabled" ID="{97967808-42de-4794-b711-a80889324359}" SourceID="{fef3dac8-d1fd-4818-9e01-e43b0d29b114}" StaticName="ValidUntil" Name="ValidUntil" CustomFormatter="" CalType="0">
+        </Field>
+        <Field Type="DateTime" DisplayName="Gültig von" Required="FALSE" EnforceUniqueValues="FALSE" Indexed="FALSE" Format="DateTime" Group="Formulartemplates" FriendlyDisplayFormat="Disabled" ID="{7fa5e126-3b1f-499c-a226-d2b69a91158e}" SourceID="{fef3dac8-d1fd-4818-9e01-e43b0d29b114}" StaticName="ValidFrom" Name="ValidFrom">
+          <Default>[today]</Default>
+        </Field>
+        <Field Type="Note" DisplayName="Formularbeschreibung" Required="FALSE" EnforceUniqueValues="FALSE" Indexed="FALSE" NumLines="6" RichText="FALSE" Sortable="FALSE" Group="Formulartemplates" ID="{75d4f27a-c372-4ad6-9ef6-933445c218e6}" SourceID="{fef3dac8-d1fd-4818-9e01-e43b0d29b114}" StaticName="TemplateDescription" Name="TemplateDescription">
+        </Field>
+        <Field Type="Text" DisplayName="TemplateIdentifier" Required="FALSE" EnforceUniqueValues="FALSE" Indexed="FALSE" MaxLength="255" Group="Formulartemplates" ID="{f5e68096-7e08-4b10-b4e1-aed517f83506}" SourceID="{fef3dac8-d1fd-4818-9e01-e43b0d29b114}" StaticName="TemplateIdentifier" Name="TemplateIdentifier">
+        </Field>
+        <Field Type="Text" DisplayName="VersionIdentifier" Required="FALSE" EnforceUniqueValues="FALSE" Indexed="FALSE" MaxLength="255" Group="Formulartemplates" ID="{c6d80fbf-b8fa-4c72-b0bc-35127ea6eb0f}" SourceID="{fef3dac8-d1fd-4818-9e01-e43b0d29b114}" StaticName="VersionIdentifier" Name="VersionIdentifier">
+        </Field>
+      </pnp:SiteFields>
+      <pnp:ContentTypes>
+        <pnp:ContentType ID="0x0101000C02C51080F16F458E04B9BCD328F38D" Name="Formulartemplate" Description="" Group="Formulartemplates" NewFormUrl="" EditFormUrl="" DisplayFormUrl="">
+          <pnp:FieldRefs>
+            <pnp:FieldRef ID="c042a256-787d-4a6f-8a8a-cf6ab767f12d" Name="ContentType" />
+            <pnp:FieldRef ID="5f47e085-2150-41dc-b661-442f3027f552" Name="SelectFilename" />
+            <pnp:FieldRef ID="8553196d-ec8d-4564-9861-3dbe931050c8" Name="FileLeafRef" Required="true" />
+            <pnp:FieldRef ID="8c06beca-0777-48f7-91c7-6da68bc07b69" Name="Created" Hidden="true" />
+            <pnp:FieldRef ID="fa564e0f-0c70-4ab9-b863-0177e6ddd247" Name="Title" />
+            <pnp:FieldRef ID="28cf69c5-fa48-462a-b5cd-27b6f9d2bd5f" Name="Modified" Hidden="true" />
+            <pnp:FieldRef ID="822c78e3-1ea9-4943-b449-57863ad33ca9" Name="Modified_x0020_By" />
+            <pnp:FieldRef ID="4dd7e525-8d6b-4cb4-9d3e-44ee25f973eb" Name="Created_x0020_By" />
+            <pnp:FieldRef ID="7fa5e126-3b1f-499c-a226-d2b69a91158e" Name="ValidFrom" />
+            <pnp:FieldRef ID="97967808-42de-4794-b711-a80889324359" Name="ValidUntil" />
+            <pnp:FieldRef ID="75d4f27a-c372-4ad6-9ef6-933445c218e6" Name="TemplateDescription" />
+            <pnp:FieldRef ID="f5e68096-7e08-4b10-b4e1-aed517f83506" Name="TemplateIdentifier" Required="true" />
+            <pnp:FieldRef ID="c6d80fbf-b8fa-4c72-b0bc-35127ea6eb0f" Name="VersionIdentifier" />
+            
+          </pnp:FieldRefs>
+        </pnp:ContentType>
+      </pnp:ContentTypes>
+      <pnp:Lists>
+        <pnp:ListInstance Title="Formulartemplates" Description="" DocumentTemplate="{site}/Formulartemplates/Forms/template.dotx" OnQuickLaunch="true" TemplateType="101" Url="Formulartemplates" EnableVersioning="true" MinorVersionLimit="0" MaxVersionLimit="10" DraftVersionVisibility="0" TemplateFeatureID="00bfea71-e717-4e80-aa17-d0c71b360101" ContentTypesEnabled="true" EnableAttachments="false" DefaultDisplayFormUrl="{site}/Formulartemplates/Forms/DispForm.aspx" DefaultEditFormUrl="{site}/Formulartemplates/Forms/EditForm.aspx" DefaultNewFormUrl="{site}/Formulartemplates/Forms/Upload.aspx" ImageUrl="/_layouts/15/images/itdl.png?rev=43" IrmExpire="false" IrmReject="false" IsApplicationList="false" ReadSecurity="0" WriteSecurity="0" ValidationFormula="" ValidationMessage="">
+          <pnp:ContentTypeBindings>
+            <pnp:ContentTypeBinding ContentTypeID="0x0101000C02C51080F16F458E04B9BCD328F38D" Default="true" />
+            <pnp:ContentTypeBinding ContentTypeID="0x0120" />
+          </pnp:ContentTypeBindings>
+          <pnp:Views>
+            <View Name="{554545D0-2125-4369-A317-E5B3CDA256E7}" DefaultView="TRUE" MobileView="TRUE" MobileDefaultView="TRUE" Type="HTML" DisplayName="Alle Dokumente" Url="/sites/DevSiteML/Formulartemplates/Forms/AllItems.aspx" Level="1" BaseViewID="1" ContentTypeID="0x" ImageUrl="/_layouts/15/images/dlicon.png?rev=43">
+              <Query>
+                <OrderBy>
+                  <FieldRef Name="FileLeafRef" />
+                </OrderBy>
+              </Query>
+              <ViewFields>
+                <FieldRef Name="DocIcon" />
+                <FieldRef Name="LinkFilename" />
+                <FieldRef Name="Modified" />
+                <FieldRef Name="Editor" />
+              </ViewFields>
+              <RowLimit Paged="TRUE">30</RowLimit>
+              <JSLink>clienttemplates.js</JSLink>
+            </View>
+          </pnp:Views>
+          <pnp:FieldRefs>
+            <pnp:FieldRef ID="7fa5e126-3b1f-499c-a226-d2b69a91158e" Name="ValidFrom" DisplayName="Gültig von" />
+            <pnp:FieldRef ID="97967808-42de-4794-b711-a80889324359" Name="ValidUntil" DisplayName="Gültig  bis" />
+            <pnp:FieldRef ID="f5e68096-7e08-4b10-b4e1-aed517f83506" Name="TemplateIdentifier" DisplayName="TemplateIdentifier" />
+            <pnp:FieldRef ID="c6d80fbf-b8fa-4c72-b0bc-35127ea6eb0f" Name="VersionIdentifier" DisplayName="VersionIdentifier" />
+            <pnp:FieldRef ID="75d4f27a-c372-4ad6-9ef6-933445c218e6" Name="TemplateDescription" DisplayName="TemplateDescription" />
+          </pnp:FieldRefs>
+        </pnp:ListInstance>
+      </pnp:Lists>
+    </pnp:ProvisioningTemplate>
+  </pnp:Templates>
+</pnp:Provisioning>

@@ -1,0 +1,7 @@
+@import "../../../common/styles/editorAndFormInstanceStyles.module.scss";
+
+:global {
+  div.section {
+    background-color: lightgray !important;
+  }
+}

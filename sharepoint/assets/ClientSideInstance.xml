@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+    <ClientSideComponentInstance
+        Title="FormTemplateListActions"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="101"
+        ComponentId="565fe5e5-9e6a-4450-a0ec-ccc8597b03e1" />
+    <ClientSideComponentInstance
+        Title="FormTemplateContextMenues"
+        Location="ClientSideExtension.ListViewCommandSet"
+        ListTemplateId="101"
+        ComponentId="a506165e-3619-498e-8b99-b9f817a3c2af" />
+        <ClientSideComponentInstance
+        Title="FormInstanceListActions"
+        Location="ClientSideExtension.ListViewCommandSet"
+        ListTemplateId="101"
+        ComponentId="39e7ab46-09f2-4b1e-a660-a94cdf42f716" />
+</Elements>

@@ -1,0 +1,74 @@
+# azure-pipelines.yml
+# Lives in each SPFx app repo
+
+# Triggers and schedules that make sense per app
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    exclude:
+      - package.json
+      - package-lock.json
+      - config/package-solution.json
+
+pr:
+  branches:
+    include:
+      - dev
+
+schedules:
+  - cron: "30 19 * * 3"
+    always: false
+    displayName: "Wöchentlicher Release-Build"
+    branches:
+      include:
+        - main
+
+# --- UI-Auswahl für manuelle Läufe ---
+parameters:
+  - name: environment
+    displayName: Environment
+    type: string
+    default: Roll-In
+    values:
+      - Roll-In
+      - Release
+
+variables:
+  # Wenn automatischer Lauf (Schedule) ⇒ Release
+  # sonst das, was in der UI ausgewählt wurde
+  - name: computedEnvironment
+    ${{ if eq(variables['Build.Reason'], 'Schedule') }}:
+      value: "Release"
+    ${{ if ne(variables['Build.Reason'], 'Schedule') }}:
+      value: ${{ parameters.environment }}
+  - group: "SPFx Apps"
+pool:
+  name: "SharePoint"
+
+# Pull in the shared template repo (Azure DevOps Server format)
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: SHAREPOINT/NOVA.Pipeline.Templates # <== your project/repo path here
+      ref: refs/heads/main # or main, or a tag
+
+# These are the only knobs a repo can touch:
+# - environmentName (optional)
+# - selectedTenants (optional for manual runs)
+# - webApps (mandatory per app)
+extends:
+  template: spfx-multi-tenant-template-v2.yml@templates
+  parameters:
+    # Default environment when not running via schedule
+    environmentName: ${{ variables.computedEnvironment }}
+
+    # UX pick to target a single tenant, or run all. Keep "Alle Tenants" for normal CI.
+    selectedTenants: "Alle Mandanten"
+
+    # Choose which web apps THIS app should be deployed to across all tenants.
+    # Valid values: Intranet, "Meine Website", Arbeitsbereiche
+    webApps:
+      - Intranet

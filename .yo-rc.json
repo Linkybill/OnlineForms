@@ -1,0 +1,12 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "version": "1.10.0",
+    "libraryName": "NOVA-SharePoint-Forms",
+    "libraryId": "2332bb35-b7e8-4fd2-8b7d-cd9909fe23e2",
+    "environment": "onprem19",
+    "packageManager": "npm",
+    "isCreatingSolution": false,
+    "componentType": "extension",
+    "extensionType": "ApplicationCustomizer"
+  }
+}

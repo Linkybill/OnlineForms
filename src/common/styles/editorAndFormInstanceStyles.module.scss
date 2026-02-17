@@ -1,0 +1,814 @@
+@import "~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss";
+
+:global {
+  @media print {
+    .inPrintOnly {
+      display: block !important;
+    }
+
+    #SuiteNavPlaceHolder,
+    .inScreenOnly,
+    .listMenuAddButton,
+    .infoIconContainer,
+    #SuiteNavPlaceHolder,
+    [class^="banner_"],
+    #sp-skipToContent,
+    .resetDateButton {
+      display: none !important;
+    }
+    div.TextareaWrapper div.ms-TextField-fieldGroup {
+      height: unset !important;
+    }
+    .fieldWrapper textarea {
+      min-height: unset !important;
+      max-height: unset !important;
+      height: auto;
+      overflow-y: unset !important;
+    }
+
+    .helpContentContainer {
+      width: 100% !important;
+    }
+  }
+
+  .inPrintOnly {
+    display: none;
+  }
+
+  .printableContentFromTextField {
+    padding: 8px;
+    background-color: rgb(255, 255, 255);
+  }
+
+  .ql-align-right {
+    text-align: right;
+  }
+
+  .customLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgb(50, 49, 48);
+    display: inline;
+  }
+
+  .customHeadlineOne {
+    color: $ms-color-themePrimary !important;
+    font-size: 24px;
+    font-family: Arial;
+    border-bottom: 1px solid $ms-color-themePrimary;
+  }
+  .customHeadlineTwo {
+    margin-top: 45px;
+    margin-bottom: 15px;
+    color: black;
+    border-bottom: 1px solid black;
+    display: block !important;
+    font-size: 20px;
+    font-family: Arial !important;
+    text-transform: uppercase;
+  }
+  //modal title
+  [class*="header-"] {
+    padding: 0px !important;
+    padding-left: 19px !important;
+  }
+
+  .modalTitle {
+    color: black !important;
+    display: block !important;
+    font-size: 20px;
+  }
+  .helpTextPanel [class*="content-"] {
+    padding-left: 19px;
+  }
+  .customHeadlineTwo::before {
+    position: relative;
+    top: 0px;
+    padding-right: 10px;
+    font-family: FabricMDL2Icons;
+  }
+
+  .helpContentContainer {
+    float: left;
+    width: calc(100% - 34px);
+  }
+  .infoIconContainer {
+    margin-left: 2px;
+    float: left;
+    position: relative;
+    top: 26px;
+  }
+  .infoIconContainer.containerType_functionHelp {
+    top: 0px;
+  }
+  .infoIconContainer i {
+    padding-right: 0px;
+    padding-left: 1px;
+    font-size: 20px;
+  }
+  .infoIconContainer button:hover {
+    border: 1px solid $ms-color-themePrimary;
+  }
+
+  .infoIconContainer.containerType_gridInfo {
+    top: 8px;
+  }
+
+  .iconButton i {
+    color: $ms-color-themePrimary;
+  }
+
+  /*
+
+  .iconButton i {
+    color: $ms-color-themePrimary;
+    font-size: 20px;
+    padding: 5px !important;
+    font-weight: 400;
+  }
+
+  .infoIconContainer {
+    float: right;
+    width: 18px;
+    position: relative;
+    top: 26px;
+  }
+  .infoIconContainer button,
+  button.iconButton {
+    padding: 5px !important;
+    padding-left: 5px !important;
+  }
+  .infoIconContainer button:hover,
+  button.iconButton:hover {
+    border: 1px solid $ms-color-themePrimary;
+    border-radius: 4px;
+    background-color: rgb(243, 242, 241);
+  }
+
+  .infoIconContainer.containerType_gridInfo {
+    top: 33px;
+  }
+  */
+
+  .List button.ms-Button--action.ms-Button--command i {
+    padding: 0px;
+    margin: 0px;
+  }
+
+  .List button i {
+    font-size: 14px;
+  }
+
+  .List .ms-DetailsHeader {
+    padding-top: 0px;
+  }
+
+  .formWrapper {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cellPaddingWrapper {
+    padding: 0px;
+  }
+
+  .contentWithSpacing {
+    background-color: transparent;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-top: 9px;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+  }
+
+  div.ms-ChoiceField {
+    margin-top: 0px !important;
+  }
+
+  .fieldWrapper.Choice div.ms-Checkbox {
+    margin-bottom: 5px;
+  }
+
+  .fieldWrapper [class^="dateTimePicker_"] > .ms-Label,
+  .fieldWrapper .ms-Checkbox-text {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: rgb(50, 49, 48) !important;
+  }
+  div [class^="column_"] {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+
+  .fieldWrapper textarea {
+    padding: 8px 8px 8px 8px;
+    max-height: 98%;
+    overflow-y: scroll;
+    margin-right: 1px;
+  }
+
+  // textarea covers the round corners, thats why margin is needed to not cover the border
+  .fieldWrapper.Note textarea {
+    margin-right: 1px;
+  }
+
+  // hide required field for textarea, it is behind label
+  .fieldWrapper.Note [class*="fieldGroup-"]::before {
+    display: none !important;
+  }
+
+  div.TextareaWrapper div.ms-TextField-fieldGroup {
+    height: 150px;
+  }
+
+  .fieldWrapper.locked.Note textarea {
+    min-height: unset !important;
+    max-height: unset !important;
+    height: auto;
+    overflow-y: unset !important;
+    color: rgb(50, 49, 48);
+  }
+  .fieldWrapper.locked.Note div.ms-TextField-fieldGroup {
+    height: unset !important;
+  }
+
+  div.noteFieldHtmlContentReadonlyWrapper {
+    border: rgb(209, 209, 209) 1px solid;
+    border-radius: 4px;
+    padding: 8px;
+  }
+
+  .fieldWrapper.locked [class^="dateTimePicker_"] > .ms-Label,
+  .fieldWrapper.locked .ms-Checkbox-text,
+  .fieldWrapper.locked .ms-Dropdown-container .ms-Label,
+  .fieldWrapper.locked .ms-TextField-wrapper .ms-Label,
+  .fieldWrapper.locked .ms-ChoiceFieldGroup .root-304 {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: rgb(50, 49, 48) !important;
+  }
+
+  .fieldWrapper.locked .readonlyNoteField span,
+  .fieldWrapper.locked input,
+  .fieldWrapper.locked .ms-Dropdown-title,
+  .fieldWrapper.locked label,
+  .fieldWrapper.locked label span {
+    color: rgb(50, 49, 48) !important;
+  }
+
+  .fieldWrapper.locked [class^="ms-TextField-field"],
+  .fieldWrapper.locked .ms-Dropdown-title,
+  .fieldWrapper.locked .ms-ComboBox-Input,
+  .fieldWrapper.locked .ms-ComboBox,
+  .fieldWrapper.locked .ms-Button,
+  .fieldWrapper.locked .ms-BasePicker-text,
+  .fieldWrapper.locked .ms-PickerPersona-container,
+  .fieldWrapper.locked .ms-BasePicker-input,
+  .SPPageChrome-app .fieldWrapper .ms-CommandBar,
+  .fieldWrapper.locked textarea {
+    background-color: #ffffff;
+  }
+
+  button {
+    border-radius: 4px !important;
+    text-decoration: none;
+  }
+
+  button.ms-Button--primary[class*="root"] {
+    // Our button
+    background-color: $ms-color-themePrimary;
+    border-color: $ms-color-themePrimary;
+    color: $ms-color-white;
+  }
+
+  button.ms-Button--primary[class*="root"]:hover,
+  button.is-disabled {
+    // Our button
+    background-color: $ms-color-white !important;
+    border-color: $ms-color-themePrimary !important;
+    color: $ms-color-themePrimary !important;
+  }
+
+  [class*="fieldGroup"] input {
+    background-color: transparent !important;
+  }
+
+  [class*="fieldGroup"],
+  .ms-Dropdown-title,
+  div.ms-BasePicker-text,
+  div.printableContentFromTextField {
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 4px;
+    border-color: rgb(209, 209, 209);
+    border-bottom-color: rgb(97, 97, 97);
+  }
+
+  [class*="fieldGroup"]:hover,
+  .ms-Dropdown:hover .ms-Dropdown-title,
+  div.ms-BasePicker-text:hover {
+    border-color: #c7c7c7;
+    border-bottom-color: rgb(97, 97, 97);
+  }
+  .is-disabled [class*="fieldGroup"]:hover,
+  .is-disabled [class*="fieldGroup"],
+  .locked div.printableContentFromTextField {
+    border-color: rgb(209, 209, 209);
+    border-bottom-color: rgb(209, 209, 209);
+  }
+
+  [class*="fieldGroup"]::after,
+  [class*="dropdown-"]::after,
+  div.ms-BasePicker-text::after {
+    border: none;
+    content: "";
+    position: absolute;
+    width: 100%;
+
+    /* position: relative; */
+    display: block;
+    top: calc(100% - 2px);
+    left: 0px;
+    /* border: none; */
+    border-bottom: 2px solid $ms-color-themePrimary;
+
+    height: 2px;
+    border-radius: 4px;
+    transform: scaleX(0);
+  }
+
+  .is-active [class*="fieldGroup"]::after,
+  [class*="dropdown-"]:focus::after,
+  div.is-open::after,
+  div.ms-BasePicker-text:has(input:focus)::after {
+    display: block !important;
+    content: "";
+    border: none;
+    position: absolute;
+    width: 100%;
+
+    /* position: relative; */
+    display: block;
+    top: calc(100% - 3px);
+    left: 0px;
+    /* border: none; */
+    border-bottom: 2px solid $ms-color-themePrimary !important;
+    border-bottom-color: $ms-color-themePrimary !important;
+
+    height: 2px;
+    border-radius: 4px;
+    transform: scaleX(1);
+    transition-duration: 0.15s;
+  }
+
+  [class*="dropdown-"]:focus::after {
+    top: calc(100% - 2px) !important;
+  }
+  div.is-open::after {
+    top: calc(100% - 4px) !important;
+  }
+  .ms-DatePicker.is-open::after {
+    display: none !important;
+  }
+
+  .fieldWrapper.locked .ms-BasePicker-text .ms-Button.is-disabled,
+  .locked .listMenuAddButton,
+  .locked .resetDateButton {
+    display: none;
+  }
+
+  .fieldWrapper.locked .ms-BasePicker-text::after {
+    background: transparent !important;
+  }
+
+  .fieldWrapper .label.required::after {
+    content: " *";
+    color: rgb(164, 38, 44);
+    padding-right: 12px;
+  }
+
+  .listMenuAddButton {
+    padding-left: 0px;
+    :hover {
+      color: $ms-color-themePrimary;
+    }
+  }
+
+  .errorDiv {
+    border-style: solid;
+    border-color: rgb(164, 38, 44);
+    padding: 15px;
+    border-width: 1px;
+  }
+  .errorText {
+    color: rgb(164, 38, 44);
+  }
+
+  div.readonlyNoteFieldLabel {
+    padding-left: 3px;
+  }
+  div.readonlyNoteField {
+    border: solid 1px rgb(243, 242, 241);
+    padding: 7px;
+    margin-left: 3px;
+    color: rgb(161, 159, 157);
+  }
+
+  button.resetDateButton {
+    margin-top: 5px;
+    width: fit-content;
+    position: relative;
+    left: -6px;
+    padding-left: 0px;
+  }
+  .divider {
+    background-color: rgb(153, 204, 255);
+  }
+  .allignedRight {
+    text-align: right;
+  }
+
+  span.nodeLabel {
+    font-family: Arial !important;
+  }
+  .WorkflowStatus div[class^="header-"] {
+    padding-left: 7px !important;
+  }
+  .htmlContent p {
+    margin: 0px;
+    padding: 0px;
+    margin-top: 5px;
+  }
+  .divider {
+    padding-top: 8px;
+  }
+  .divider .fieldWrapper label.ms-Label {
+    position: relative;
+    top: -8px;
+  }
+
+  .ms-ChoiceFieldLabel {
+    position: relative;
+    top: 3px;
+  }
+  .flexTable {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0px; /* space between tables */
+    border: 0px solid #ccc; /* optional, for visual clarity */
+  }
+  .flexRow {
+    display: flex;
+    flex-wrap: wrap;
+    /* space between rows */
+  }
+  .flexCell {
+    flex: 0 1 auto; /* do not grow, but shrink as needed */
+    box-sizing: border-box; /* ensures padding is included in width */
+    margin-right: 10px; /* space between cells */
+    margin-bottom: 10px;
+  }
+  .flexCell:last-child {
+    margin-right: 0; /* no margin on the last cell */
+  }
+  .flexRow:last-child {
+    margin-bottom: 0; /* no margin on the last row */
+  }
+  .content {
+    margin-top: 10px;
+  }
+}
+
+.container {
+  max-width: 700px;
+  margin: 0px auto;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 25px 50px 0 rgba(0, 0, 0, 0.1);
+}
+
+.grid {
+  @include ms-Grid;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+.row {
+  @include ms-Grid-row;
+  padding-left: 0px;
+  padding-right: 0px;
+  margin: 0px;
+}
+
+.column {
+  @include ms-Grid-col;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+.sm1 {
+  @include ms-sm1;
+}
+.sm2 {
+  @include ms-sm2;
+}
+.sm3 {
+  @include ms-sm3;
+}
+.sm4 {
+  @include ms-sm4;
+}
+.sm5 {
+  @include ms-sm5;
+}
+.sm6 {
+  @include ms-sm6;
+}
+.sm7 {
+  @include ms-sm7;
+}
+.sm8 {
+  @include ms-sm8;
+}
+.sm9 {
+  @include ms-sm9;
+}
+.sm10 {
+  @include ms-sm10;
+}
+.sm11 {
+  @include ms-sm11;
+}
+.sm12 {
+  @include ms-sm12;
+}
+
+.md1 {
+  @include ms-md1;
+}
+.md2 {
+  @include ms-md2;
+}
+.md3 {
+  @include ms-md3;
+}
+.md4 {
+  @include ms-md4;
+}
+.md5 {
+  @include ms-md5;
+}
+.md6 {
+  @include ms-md6;
+}
+.md7 {
+  @include ms-md7;
+}
+.md8 {
+  @include ms-md8;
+}
+.md9 {
+  @include ms-md9;
+}
+.md10 {
+  @include ms-md10;
+}
+.md11 {
+  @include ms-md11;
+}
+.md12 {
+  @include ms-md12;
+}
+
+.lg1 {
+  @include ms-lg1;
+}
+.lg2 {
+  @include ms-lg2;
+}
+.lg3 {
+  @include ms-lg3;
+}
+.lg4 {
+  @include ms-lg4;
+}
+.lg5 {
+  @include ms-lg5;
+}
+.lg6 {
+  @include ms-lg6;
+}
+.lg7 {
+  @include ms-lg7;
+}
+.lg8 {
+  @include ms-lg8;
+}
+.lg9 {
+  @include ms-lg9;
+}
+.lg10 {
+  @include ms-lg10;
+}
+.lg11 {
+  @include ms-lg11;
+}
+.lg12 {
+  @include ms-lg12;
+}
+
+.xl1 {
+  @include ms-xl1;
+}
+.xl2 {
+  @include ms-xl2;
+}
+.xl3 {
+  @include ms-xl3;
+}
+.xl4 {
+  @include ms-xl4;
+}
+.xl5 {
+  @include ms-xl5;
+}
+.xl6 {
+  @include ms-xl6;
+}
+.xl7 {
+  @include ms-xl7;
+}
+.xl8 {
+  @include ms-xl8;
+}
+.xl9 {
+  @include ms-xl9;
+}
+.xl10 {
+  @include ms-xl10;
+}
+.xl11 {
+  @include ms-xl11;
+}
+.xl12 {
+  @include ms-xl12;
+}
+
+.xxl1 {
+  @include ms-xxl1;
+}
+.xxl2 {
+  @include ms-xxl2;
+}
+.xxl3 {
+  @include ms-xxl3;
+}
+.xxl4 {
+  @include ms-xxl4;
+}
+.xxl5 {
+  @include ms-xxl5;
+}
+.xxl6 {
+  @include ms-xxl6;
+}
+.xxl7 {
+  @include ms-xxl7;
+}
+.xxl8 {
+  @include ms-xxl8;
+}
+.xxl9 {
+  @include ms-xxl9;
+}
+.xxl10 {
+  @include ms-xxl10;
+}
+.xxl11 {
+  @include ms-xxl11;
+}
+.xxl12 {
+  @include ms-xxl12;
+}
+
+.xxxl1 {
+  @include ms-xxxl1;
+}
+.xxxl2 {
+  @include ms-xxxl2;
+}
+.xxxl3 {
+  @include ms-xxxl3;
+}
+.xxxl4 {
+  @include ms-xxxl4;
+}
+.xxxl5 {
+  @include ms-xxxl5;
+}
+.xxxl6 {
+  @include ms-xxxl6;
+}
+.xxxl7 {
+  @include ms-xxxl7;
+}
+.xxxl8 {
+  @include ms-xxxl8;
+}
+.xxxl9 {
+  @include ms-xxxl9;
+}
+.xxxl10 {
+  @include ms-xxxl10;
+}
+.xxxl11 {
+  @include ms-xxxl11;
+}
+.xxxl12 {
+  @include ms-xxxl12;
+}
+
+.title {
+  @include ms-font-xl;
+  @include ms-fontColor-white;
+}
+
+.subTitle {
+  @include ms-font-l;
+  @include ms-fontColor-white;
+}
+
+.description {
+  @include ms-font-l;
+  @include ms-fontColor-white;
+}
+
+.helloWorld {
+  .container {
+    max-width: 700px;
+    margin: 0px auto;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 25px 50px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .row {
+    @include ms-Grid-row;
+    @include ms-fontColor-white;
+    background-color: $ms-color-themeDark;
+    padding: 20px;
+  }
+
+  .column {
+    @include ms-Grid-col;
+    @include ms-lg10;
+    @include ms-xl8;
+    @include ms-xlPush2;
+    @include ms-lgPush1;
+  }
+
+  .title {
+    @include ms-font-xl;
+    @include ms-fontColor-white;
+  }
+
+  .subTitle {
+    @include ms-font-l;
+    @include ms-fontColor-white;
+  }
+
+  .description {
+    @include ms-font-l;
+    @include ms-fontColor-white;
+  }
+
+  .button {
+    // Our button
+    text-decoration: none;
+    height: 32px;
+
+    // Primary Button
+    min-width: 80px;
+    background-color: $ms-color-themePrimary;
+    border-color: $ms-color-themePrimary;
+    color: $ms-color-white;
+
+    // Basic Button
+    outline: transparent;
+    position: relative;
+    font-family: "Arial";
+    -webkit-font-smoothing: antialiased;
+    font-size: $ms-font-size-m;
+    font-weight: $ms-font-weight-regular;
+    border-width: 0;
+    text-align: center;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 16px;
+
+    .label {
+      font-weight: $ms-font-weight-semibold;
+      font-size: $ms-font-size-m;
+      height: 32px;
+      line-height: 32px;
+      margin: 0 4px;
+      vertical-align: top;
+      display: inline-block;
+    }
+  }
+}
