@@ -1,32 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Elements xmlns="http://schemas.microsoft.com/sharepoint/">
     <CustomAction
-        Title="FormTemplateListActions"
-        RegistrationId="101"
+        Title="FormInstanceContextMenuesCommandsetOnline"
+        RegistrationId="100"
         RegistrationType="List"
         Location="ClientSideExtension.ListViewCommandSet.CommandBar"
-        ClientSideComponentId="565fe5e5-9e6a-4450-a0ec-ccc8597b03e1"
+        ClientSideComponentId="f23a6d97-1483-46b6-9213-6f9c856abb70"
         ClientSideComponentProperties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}">
     </CustomAction>
     <CustomAction
-        Title="FormTemplateContextActions"
-        RegistrationId="101"
+        Title="FormTemplateContextMenuesOnline"
+        RegistrationId="100"
         RegistrationType="List"
-        Location="ClientSideExtension.ListViewCommandSet"
-        ClientSideComponentId="a506165e-3619-498e-8b99-b9f817a3c2af"
-        ClientSideComponentProperties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}">
-    </CustomAction>
-     <CustomAction
-        Title="FormInstanceListActions"
-        RegistrationId="115"
-        RegistrationType="List"
-        Location="ClientSideExtension.ListViewCommandSet"
-        ClientSideComponentId="39e7ab46-09f2-4b1e-a660-a94cdf42f716"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ClientSideComponentId="fd44cdca-5e8e-429b-91ba-bfd921035919"
         ClientSideComponentProperties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}">
     </CustomAction>
     <CustomAction
-        Title="FormAppCustomizer"
+        Title="FormTemplateListActionsOnline"
+        RegistrationId="100"
+        RegistrationType="List"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ClientSideComponentId="cbacc646-277b-40b8-a35e-ed85ea649c5f"
+        ClientSideComponentProperties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}">
+    </CustomAction>
+    <CustomAction
+        Title="NovaFormsAppCustomizerOnline"
         Location="ClientSideExtension.ApplicationCustomizer"
-        ClientSideComponentId="3c08907f-e984-408b-8ab3-6df1e68030e2"
-        ClientSideComponentProperties="{ 'testMessage':'Hello from the App Customizer!' }" />
+        ClientSideComponentId="3ddd6a77-b36c-42cd-a534-6545b4304819"
+        ClientSideComponentProperties="{}">
+    </CustomAction>
 </Elements>

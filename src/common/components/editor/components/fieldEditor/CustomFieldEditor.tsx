@@ -25,7 +25,6 @@ import { TemplateEditorFieldDescription } from "../../../../listItem/fields/temp
 import { createFormTemplateBasedOnFields } from "../../../../helper/FormTemplateGenerator";
 import { ActionTriggerList } from "../../../../actions/components/ActionTriggerList";
 import { ActionTrigger } from "../../../../actions/models/ActionTrigger";
-import { FieldType } from "../../../../../clients/efav2Client";
 
 export const CustomFieldEditor: React.FC<{
   onFieldChanged: (field: FieldDescriptionTypes, saveTemplate: boolean) => void;

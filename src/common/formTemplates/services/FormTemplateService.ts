@@ -3,7 +3,7 @@ import { EditorModel } from "../../components/editor/models/EditorModel";
 import { FormTemplate } from "../../../extensions/common/models/FormTemplate";
 import { sp } from "@pnp/sp";
 import { IWeb, IWebInfo } from "@pnp/sp/webs";
-import { FormTemplateFieldNames, ListNames } from "../../../extensions/formTemplateListActions/Constants";
+import { FormTemplateFieldNames, ListNames } from "../../../extensions/formTemplateListActionsOnline/Constants";
 import { ErrorViewModel } from "../../models/ErrorViewModel";
 import log from "loglevel";
 import { FormTemplateConfig } from "../../configListService/models/FormTemplateConfig";
@@ -12,11 +12,11 @@ import { ConfigListItem } from "../../../extensions/common/models/ConfigListItem
 import { ConfigListService } from "../../configListService/ConfigListService";
 import { createDefaultJSOnOrLoadBaseTemplateJSon } from "../../../extensions/common/models/DefaultEditorModel";
 import { FormTemplateUpdateResult } from "./TemplateUpdateResult";
-import { createEfav2Client } from "../../../clients/efav2ClientCreator";
-import { AddAndConfigureFormWebDto, ConfigureExistingFormWebDto } from "../../../clients/efav2Client";
-import axios from "axios";
+// Removed external web provisioning; templates are created in current web
 
 const featureIdWhichNeedsToGetActivatedInFormSubWebs = "1fbb5a1f-3ec3-45cf-a5d5-741cce28db2f";
+const docSetFeatureId = "3bae86a2-776d-499d-9db8-fa4cdc7884f8";
+const templateUsagePrefix = "TemplateUsage_";
 
 export const addFormTemplate = async (
   title: string,
@@ -50,9 +50,13 @@ export const addFormTemplate = async (
       [FormTemplateFieldNames.templateVersionIdentifier]: template.templateVersionIdentifier,
       [FormTemplateFieldNames.templateDescription]: template.description,
       [FormTemplateFieldNames.templateFieldNameGueltigBis]: template.validUntil,
-      [FormTemplateFieldNames.templateFieldNameGueltigVon]: template.validFrom,
-      ContentTypeId: "0x0101000C02C51080F16F458E04B9BCD328F38D"
+      [FormTemplateFieldNames.templateFieldNameGueltigVon]: template.validFrom
     });
+
+    // ensure instance library + config mapping
+    const listTitle = await ensureInstanceLibraryForTemplate(template.title, template.templateVersionIdentifier);
+    await upsertTemplateUsageConfig(template.templateVersionIdentifier, listTitle, sp.web);
+
     return Promise.resolve({ error: undefined, model: { ...template, id: -1 } });
   } catch (e) {
     log.error("Error while adding a new formtemplate: ", e);
@@ -61,6 +65,24 @@ export const addFormTemplate = async (
       model: template
     };
   }
+};
+
+export const upsertTemplateUsageConfig = async (versionIdentifier: string, listTitle: string, web: IWeb): Promise<ConfigListItem<string>> => {
+  return ConfigListService.upsertConfigString(web, templateUsagePrefix + versionIdentifier, listTitle);
+};
+
+export const getInstanceListNameByVersionIdentifier = async (versionIdentifier: string, web: IWeb): Promise<string> => {
+  const config = await ConfigListService.getConfigString(web, templateUsagePrefix + versionIdentifier);
+  if (!config || !config.config) {
+    throw new Error("Keine Instanzliste für Template-Version gefunden: " + versionIdentifier);
+  }
+  return config.config;
+};
+
+export const getAllInstanceListNames = async (web: IWeb): Promise<string[]> => {
+  const configs = await ConfigListService.getConfigStringsByPrefix(web, templateUsagePrefix);
+  const names = configs.map((c) => c.config).filter((v) => v !== undefined && v !== null && v !== "");
+  return Array.from(new Set(names));
 };
 
 export const addNewTemplateWithNewWeb = async (
@@ -72,14 +94,6 @@ export const addNewTemplateWithNewWeb = async (
   versionIdentifier: string,
   baseTemplateItemId: number | undefined
 ): Promise<ErrorViewModel<FormTemplate>> => {
-  log.debug("going to add new template in new web");
-
-  var client = await createEfav2Client("");
-  const rootWeb = await sp.site.rootWeb.get();
-  const dto: AddAndConfigureFormWebDto = new AddAndConfigureFormWebDto({
-    formTitle: title,
-    rootWebUrl: rootWeb.Url
-  });
   const template: FormTemplate = {
     currentETag: "1",
     description: description,
@@ -89,24 +103,6 @@ export const addNewTemplateWithNewWeb = async (
     templateVersionIdentifier: versionIdentifier,
     title: title
   };
-
-  const response = await client.addAndConfigureFormWeb(dto);
-
-  if (response.validationError === "" || response.validationError === undefined || response.validationError === null) {
-    const web = await sp.site.openWebById(response.createdWebId);
-    try {
-      var newWeb = await (await sp.site.openWebById(response.createdWebId)).web.get();
-      var createdSiteRelativeUrl = newWeb.Url.replace(rootWeb.Url, "");
-      ensureTemplateConfigInWeb(web.web, templateIdentifier);
-      await ensureTemplateIdAndWebUrlAssociationToBeRegisteredInRootWeb(createdSiteRelativeUrl, templateIdentifier);
-    } catch (eConfig) {
-      log.error("could not add configuration item for web", { webInfoObject: web.data, error: eConfig });
-      return {
-        error: "Das erstellte Web konnte nicht konfiguriert werden",
-        model: template
-      };
-    }
-  }
 
   const defaultTemplate = await createDefaultJSOnOrLoadBaseTemplateJSon(baseTemplateItemId);
   const newTemplate = await addFormTemplate(template.title, template.description, template.validFrom, template.validUntil, template.templateIdenfitier, template.templateVersionIdentifier, defaultTemplate);
@@ -129,6 +125,7 @@ export const loadFormTemplate = async (templateItemId: number): Promise<ErrorVie
       error: undefined,
       model: {
         currentETag: item["odata.etag"],
+        id: item.ID,
         description: item[FormTemplateFieldNames.templateDescription],
         templateIdenfitier: item[FormTemplateFieldNames.templateIdentifier],
         title: item["Title"],
@@ -152,6 +149,42 @@ export const loadFormTemplate = async (templateItemId: number): Promise<ErrorVie
       }
     };
   }
+};
+
+export const loadFormTemplateByIdentifier = async (templateIdentifier: string): Promise<ErrorViewModel<FormTemplate>> => {
+  const now = new Date().toISOString();
+  const formTemplates = await sp.site.rootWeb.lists
+    .getByTitle(ListNames.formTemplateListName)
+    .items.filter(
+      FormTemplateFieldNames.templateIdentifier +
+        " eq '" +
+        templateIdentifier +
+        "' and ( (" +
+        FormTemplateFieldNames.templateFieldNameGueltigVon +
+        " lt '" +
+        now +
+        "' and " +
+        FormTemplateFieldNames.templateFieldNameGueltigBis +
+        " gt '" +
+        now +
+        "') or (   " +
+        FormTemplateFieldNames.templateFieldNameGueltigVon +
+        " lt '" +
+        now +
+        "' and " +
+        FormTemplateFieldNames.templateFieldNameGueltigBis +
+        " eq null  ) )"
+    )
+    .get();
+
+  if (formTemplates.length > 0) {
+    const templateItemId = formTemplates[0].ID;
+    return await loadFormTemplate(templateItemId);
+  }
+  return {
+    error: "template nicht gefunden",
+    model: undefined
+  };
 };
 
 export const updateTemplate = async (templateItemId: number, editorModel: EditorModel, context: any, currentETag: string): Promise<ErrorViewModel<FormTemplateUpdateResult | undefined>> => {
@@ -208,46 +241,6 @@ export const addNewTemplateAndConfigureExistingWeb = async (
   webId: string,
   baseTemplateItemId: number | undefined
 ): Promise<ErrorViewModel<FormTemplate>> => {
-  log.debug("going to add new template in existing web");
-  const web = await sp.site.openWebById(webId);
-  await ensureConfigList(web.web);
-  const resolvedWeb = await web.web.get();
-  const resolvedRootWeb = await sp.site.rootWeb.get();
-  const siteRelativeWebUrl = resolvedWeb.Url.replace(resolvedRootWeb.Url, "");
-
-  try {
-    const efaClient = await createEfav2Client("");
-    var dto = new ConfigureExistingFormWebDto({
-      formTitle: formTemplateTitle,
-      webUrl: resolvedWeb.Url
-    });
-
-    await efaClient.configureExistingFormWebForForm(dto);
-  } catch (eContentType) {
-    log.error(eContentType);
-    return {
-      error: "ContentType konnte nicht erstellt werden",
-      model: undefined
-    };
-  }
-  try {
-    await ensureTemplateConfigInWeb(web.web, templateIdentifier);
-  } catch (eConfig) {
-    log.error(eConfig);
-    return {
-      error: "Konfiguration für Template konnte nicht erstellt werden",
-      model: undefined
-    };
-  }
-  try {
-    await ensureTemplateIdAndWebUrlAssociationToBeRegisteredInRootWeb(siteRelativeWebUrl, templateIdentifier);
-  } catch (e) {
-    log.error("Could not add root config for template", templateIdentifier, e);
-    return {
-      error: "Konfiguration für Template konnte nicht erstellt werden",
-      model: undefined
-    };
-  }
   const defaultEditorModel = await createDefaultJSOnOrLoadBaseTemplateJSon(baseTemplateItemId);
   const template = await addFormTemplate(formTemplateTitle, description, validFrom, validUntil, templateIdentifier, versionIdentifier, defaultEditorModel);
 
@@ -298,6 +291,60 @@ const ensureTemplateConfigInWeb = async (web: IWeb, templateIdentifier: string):
   } else {
     await ConfigListService.overwriteConfig<FormTemplateConfig>(web, configToEnsure, existingConfig.itemId);
   }
+};
+
+const ensureInstanceLibraryForTemplate = async (templateTitle: string, versionIdentifier: string): Promise<string> => {
+  await sp.site.features.add(docSetFeatureId, true);
+
+  const baseListTitle = sanitizeListTitle(templateTitle);
+  let listTitle = baseListTitle;
+  const existingList = await sp.web.lists.filter("Title eq '" + listTitle + "'").get();
+  if (existingList.length > 0) {
+    const suffix = versionIdentifier.replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
+    listTitle = (baseListTitle + "_" + suffix).substring(0, 255);
+  }
+
+  let list = await sp.web.lists.filter("Title eq '" + listTitle + "'").get();
+  if (list.length === 0) {
+    await sp.web.lists.add(listTitle, "", 101, false);
+  }
+
+  const listRef = sp.web.lists.getByTitle(listTitle);
+  await listRef.update({ ContentTypesEnabled: true });
+
+  const docSetCtName = sanitizeListTitle(templateTitle);
+  const existingCts = await sp.web.contentTypes.filter("Name eq '" + docSetCtName + "'").get();
+  let ctId: string | undefined = undefined;
+  if (existingCts.length > 0) {
+    ctId = existingCts[0].Id.StringValue;
+  } else {
+    const newCtId = "0x0120D52000" + Guid.newGuid().toString().replace(/-/g, "");
+    const addedCt = await sp.web.contentTypes.add(newCtId, docSetCtName, "Form instances for " + templateTitle, "OnlineForms");
+    ctId = addedCt.data.Id.StringValue;
+  }
+
+  await listRef.contentTypes.addAvailableContentType(ctId);
+
+  // ensure FormInstanceIdentifier field
+  const fieldInternalName = "FormInstanceIdentifier";
+  const fieldExists = await sp.web.fields.filter("InternalName eq '" + fieldInternalName + "'").get();
+  if (fieldExists.length === 0) {
+    await sp.web.fields.addText(fieldInternalName, 255, { Group: "OnlineForms" });
+  }
+  const listFieldExists = await listRef.fields.filter("InternalName eq '" + fieldInternalName + "'").get();
+  if (listFieldExists.length === 0) {
+    await listRef.fields.addText(fieldInternalName, 255, { Group: "OnlineForms" });
+  }
+
+  return listTitle;
+};
+
+const sanitizeListTitle = (title: string): string => {
+  const cleaned = title.replace(/[\"#%*<>?\/\\{|}]/g, "").trim();
+  if (cleaned.length === 0) {
+    return "FormInstances";
+  }
+  return cleaned.substring(0, 255);
 };
 
 const ensureTemplateIdAndWebUrlAssociationToBeRegisteredInRootWeb = async (siteRelativeUrl: string, templateIdentifier: string): Promise<ConfigListItem<string>> => {

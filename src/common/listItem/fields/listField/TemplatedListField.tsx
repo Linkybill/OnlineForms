@@ -1,6 +1,6 @@
 import React from "react";
 import { IListFieldProps } from "./ListField";
-import renderHTML from "react-render-html";
+import parse from "html-react-parser";
 import log from "loglevel";
 const format: any = require("string-template");
 export const TemplatedListField = (props: IListFieldProps) => {
@@ -19,5 +19,5 @@ export const TemplatedListField = (props: IListFieldProps) => {
 
   const completeHtml = props.fieldDescription.outerTemplate !== undefined && props.fieldDescription.outerTemplate !== "" ? format(props.fieldDescription.outerTemplate, [itemElements.join("")]) : itemElements.join("");
 
-  return renderHTML(completeHtml);
+  return <>{parse(completeHtml)}</>;
 };

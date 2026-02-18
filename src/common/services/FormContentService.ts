@@ -1,32 +1,44 @@
 import { IFile, IFileInfo } from "@pnp/sp/files";
-import { getFormTemplateConfig, loadFormTemplate } from "../formTemplates/services/FormTemplateService";
+import { getAllInstanceListNames, getFormTemplateConfig, getInstanceListNameByVersionIdentifier, loadFormTemplate, loadFormTemplateByIdentifier } from "../formTemplates/services/FormTemplateService";
 import { ErrorViewModel } from "../models/ErrorViewModel";
 import { FormTemplate } from "../../extensions/common/models/FormTemplate";
-import { ActiveListFieldNames, FormTemplateFieldNames, ListNames } from "../../extensions/formTemplateListActions/Constants";
+import { ActiveListFieldNames, FormTemplateFieldNames, ListNames } from "../../extensions/formTemplateListActionsOnline/Constants";
 import { ListItem } from "../listItem/ListItem";
 import log, { error } from "loglevel";
 import { sp } from "@pnp/sp";
 import { createDefaultItem, loadFieldSchema } from "../listItem/helper/ListHelper";
-import { FormViewModel } from "../../webparts/formInstance/models/FormViewModel";
+import { FormViewModel } from "../../webparts/formInstanceOnline/models/FormViewModel";
 import { FormTemplateConfig } from "../configListService/models/FormTemplateConfig";
 import { ConfigListItem } from "../../extensions/common/models/ConfigListItem";
 import {} from "../formTemplates/services/FormTemplateService";
-import { FormListItem } from "../../webparts/formInstance/models/FormListItem";
+import { FormListItem } from "../../webparts/formInstanceOnline/models/FormListItem";
 import { mapObjectToListItem } from "../listItem/mapper/ObjectToListItemMapper";
 import { ListItemToListItemFormUpdateValuesMapper } from "../components/formcomponents/mapper/ListItemToListItemFormUpdateValuesMapper";
 import { mapListItemToObject } from "../listItem/mapper/ListItemToObjectMapper";
 
 import { IListItemFormUpdateValue } from "@pnp/sp/lists";
 import axios from "axios";
-import { formDocumentContentTypeName } from "../FormManagement/models/Constants";
 import { FileWithKey } from "../helper/FormFileContext";
 import { IServerLoggingContext } from "../logging/ServerLoggingContext";
 import { Logmodel } from "../logging/LogModel";
 import { SPHttpClient } from "@microsoft/sp-http";
 import { SharePointListItemsProvider } from "../components/listView/provider/SharePointListItemsProvider";
 const formTemplateIdentifierPropertyName = "formTemplateIdentifier";
+const formTemplateVersionIdentifierPropertyName = "formTemplateVersionIdentifier";
 export class FormContentService {
   static documentSetContentTypeId = "0x0120D520";
+
+  public resolveInstanceListNameByVersion = async (versionIdentifier: string): Promise<string> => {
+    return await this.getInstanceListNameByVersion(versionIdentifier);
+  };
+
+  public resolveInstanceListNameByItemId = async (itemId: number): Promise<string | undefined> => {
+    return await this.findInstanceListNameByItemId(itemId);
+  };
+
+  public resolveAllInstanceListNames = async (): Promise<string[]> => {
+    return await this.getAllInstanceListNames();
+  };
 
   initializeFormViewModel = async (templateIdentifier: string | undefined): Promise<ErrorViewModel<FormViewModel>> => {
     const template = templateIdentifier === undefined ? await this.loadFormTemplate() : await this.loadFormTemplateByIdentifier(templateIdentifier);
@@ -51,17 +63,13 @@ export class FormContentService {
   };
 
   createDocumentset = async (webUrl: string, libraryName: string, documentSetTitle: string): Promise<number> => {
-    var ctypeOrders = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).rootFolder.uniqueContentTypeOrder.get();
-    if (ctypeOrders[0] == undefined) {
-      ctypeOrders = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).rootFolder.contentTypeOrder.get();
+    const cTypes = await sp.web.lists.getByTitle(libraryName).contentTypes.get();
+    const docSetCt = cTypes.filter((ct) => ct.StringId.startsWith(FormContentService.documentSetContentTypeId))[0];
+    if (!docSetCt) {
+      log.error("CreateDocumentSet: can not create document set because no DocSet content type exists in list", libraryName);
+      throw new Error("DocSet content type not found in list " + libraryName);
     }
-
-    if (ctypeOrders[0] == undefined) {
-      log.error("CreateDocumentSet: can not create document set because CTypeOrder is undefined");
-      throw new Error("ContentTypeOrder of ActiveList is undefined");
-    }
-
-    const contentTypeId = ctypeOrders[0].StringValue;
+    const contentTypeId = docSetCt.StringId;
 
     return new Promise((resolve, reject) => {
       var ctx = new SP.ClientContext(webUrl);
@@ -136,11 +144,6 @@ export class FormContentService {
       const res = await sp.web.getFolderByServerRelativeUrl(serverRelativeFolderUrl).files.add(fileName, fileContent, true);
       var item = await (await res.file.getItem()).get();
       return item.ID;
-      // Fetch the list and target folder
-
-      // Upload the document to the Document Set folder
-
-      console.log(`File '${fileName}' uploaded successfully to Document Set '${serverRelativeFolderUrl}'`);
     } catch (error) {
       console.error("Error uploading document:", error);
       throw error;
@@ -148,11 +151,14 @@ export class FormContentService {
   };
 
   createVersionAndTriggerWorkflow = async (itemId: number, comment: string, corelationId: string): Promise<void> => {
-    const item = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(itemId).get();
+    const listName = await this.findInstanceListNameByItemId(itemId);
+    if (!listName) {
+      return;
+    }
+    const item = await sp.web.lists.getByTitle(listName).items.getById(itemId).get();
     if (item.ContentTypeId.startsWith(FormContentService.documentSetContentTypeId)) {
-      const itemFolder = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(itemId).folder.get();
+      const itemFolder = await sp.web.lists.getByTitle(listName).items.getById(itemId).folder.get();
       const web = await sp.web.get();
-
       await this.AddDocSetVersion(web.Url, itemFolder.ServerRelativeUrl, comment, corelationId);
     }
   };
@@ -175,13 +181,9 @@ export class FormContentService {
       let result = await this.loadListItemByFileName(fileName, client);
 
       if (result === undefined) {
-        result = await this.loadListItemByOriginalFileNameProperty(fileName, client);
-      }
-
-      if (result === undefined) {
-        log.error("could not load listitem by filename or property", fileName);
+        log.error("could not load listitem by filename", fileName);
         var logMessage: Logmodel = {
-          text: "Das Formular konnte weder mit fileName noch mit originalFileName ermittelt werden. Es wurde gesucht nach " + fileName,
+          text: "Das Formular konnte nicht gefunden werden. Es wurde gesucht nach " + fileName,
           type: "LoadForm"
         };
         remoteLogger.logCollectedLogsAsError(logMessage);
@@ -219,11 +221,13 @@ export class FormContentService {
     mirroredFieldNames: string[],
     fieldNamesWichShouldBeIgnoredInJSON: string[],
     formTemplateIdentifier: string,
+    formTemplateVersionIdentifier: string,
     remoteLogger: IServerLoggingContext
   ): Promise<ListItem> => {
     const currentWeb = await sp.web.get();
 
-    const currentList = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).expand("RootFolder").get();
+    const instanceListName = await this.getInstanceListNameByVersion(formTemplateVersionIdentifier);
+    const currentList = await sp.web.lists.getByTitle(instanceListName).expand("RootFolder").get();
     const listSchema = await loadFieldSchema(currentWeb.Id, currentList.Id, undefined);
     const itemWithPropsInList = new ListItem(formListItem.ID);
     const itemForJSON = new ListItem(formListItem.ID);
@@ -242,13 +246,16 @@ export class FormContentService {
     });
     const objectForJSON = mapListItemToObject(itemForJSON);
     objectForJSON[formTemplateIdentifierPropertyName] = formTemplateIdentifier;
+    objectForJSON[formTemplateVersionIdentifierPropertyName] = formTemplateVersionIdentifier;
+    objectForJSON[ActiveListFieldNames.formInstanceIdentifier] = fileNameToUse.replace(".json", "");
     const json = JSON.stringify(objectForJSON);
     const folderName = fileNameToUse.replace(".json", "");
-    const folderItemId = await this.createDocumentset(currentWeb.Url, ListNames.aktiveFormsListName, folderName);
-    const folderPath = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(folderItemId).folder.serverRelativeUrl.get();
+    const folderItemId = await this.createDocumentset(currentWeb.Url, instanceListName, folderName);
+    const folderPath = await sp.web.lists.getByTitle(instanceListName).items.getById(folderItemId).folder.serverRelativeUrl.get();
     var filteItemId = await this.uploadDocumentToDocumentSet(folderPath, folderName + ".json", json);
     const updateValues = ListItemToListItemFormUpdateValuesMapper.mapListItemToToFormUpdateValues(itemWithPropsInList, false, listSchema);
-    const addValidateResult = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(folderItemId).validateUpdateListItem(updateValues);
+    updateValues.push({ FieldName: ActiveListFieldNames.formInstanceIdentifier, FieldValue: objectForJSON[ActiveListFieldNames.formInstanceIdentifier], HasException: false, ErrorMessage: "" });
+    const addValidateResult = await sp.web.lists.getByTitle(instanceListName).items.getById(folderItemId).validateUpdateListItem(updateValues);
     var fieldsWithErrors = addValidateResult.filter((r) => r.ErrorMessage !== null && r.ErrorMessage !== undefined);
     if (fieldsWithErrors.length > 0) {
       const errors = fieldsWithErrors.map((f) => f.FieldName + ":" + f.ErrorMessage);
@@ -262,16 +269,14 @@ export class FormContentService {
       log.error("FormItem konnte nicht gespeichert werden. ", logModel);
       throw new Error("FormItem konnte nicht gespeichert werden. Folgende Fehler sind aufgetreten: " + errors.join("    "));
     }
-    await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(filteItemId).validateUpdateListItem(updateValues);
+    await sp.web.lists.getByTitle(instanceListName).items.getById(filteItemId).validateUpdateListItem(updateValues);
     addValidateResult.forEach((prop) => {
       formListItem.setErrors(prop.FieldName as string, prop.ErrorMessage !== undefined && prop.ErrorMessage !== null && prop.ErrorMessage !== "" ? [prop.ErrorMessage] : []);
       // todo: setValues? I ddont set values here because I do not expect, that SharePoint changes Values on adding
       log.debug("setting exception in listitem", prop, itemWithPropsInList);
     });
-    var allContentTypes = await sp.site.rootWeb.contentTypes.get();
-    var formDocumentCType = allContentTypes.filter((c) => c.Name === formDocumentContentTypeName)[0];
     var allUploadPromises = filesToUpload.map((f) => {
-      return this.uploadFiles(folderPath, f.key, [f.file], formDocumentCType.Id.StringValue);
+      return this.uploadFiles(folderPath, f.key, [f.file]);
     });
     const allDeletes = filenamesToDelete.map((fileName) => {
       const serverRelativeFileUrl = folderPath + "/" + fileName;
@@ -316,16 +321,18 @@ export class FormContentService {
     mirroredFieldNames: string[],
     fieldNamesWichShouldBeIgnoredInJSON: string[],
     usedTemplateIdentifier: string,
+    usedTemplateVersionIdentifier: string,
     remoteLogger: IServerLoggingContext
   ): Promise<ListItem> => {
     const itemForJSON = new ListItem(formListItem.ID);
     const itemWithPropsFromSharePointOnly = new ListItem(formListItem.ID);
 
-    const resolvedActiveList = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).expand("RootFolder").get();
+    const instanceListName = await this.getInstanceListNameByVersion(usedTemplateVersionIdentifier);
+    const resolvedActiveList = await sp.web.lists.getByTitle(instanceListName).expand("RootFolder").get();
     const resolvedWebRequest = await sp.web.get();
 
     const folderOrFileItem = await sp.web.lists
-      .getByTitle(ListNames.aktiveFormsListName)
+      .getByTitle(instanceListName)
       .items.getById(formListItem.ID)
       .select("Id", "Title", "LinkFilename", "Author/Id", "Author/Title", "Editor/Id", "Editor/Title", "ContentTypeId") // Add fields you need
       .expand("Author", "Editor") // Expanding fields like 'Author' and 'Editor'
@@ -333,7 +340,7 @@ export class FormContentService {
     const itemIdForMetadataUpdate = formListItem.ID;
     let file: IFileInfo = undefined;
     if (folderOrFileItem.ContentTypeId.startsWith(FormContentService.documentSetContentTypeId)) {
-      const folder = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).rootFolder.folders.getByName(folderOrFileItem.LinkFilename).get();
+      const folder = await sp.web.lists.getByTitle(instanceListName).rootFolder.folders.getByName(folderOrFileItem.LinkFilename).get();
       const filesFromActiveList = await sp.web.getFolderByServerRelativeUrl(folder.ServerRelativeUrl).files.filter("substringof('.json', Name)").get();
 
       if (filesFromActiveList.length > 0) {
@@ -342,10 +349,8 @@ export class FormContentService {
 
       const parentFolderForFileUpload = file.ServerRelativeUrl.replace("/" + file.Name, "");
 
-      var cTypes = await sp.site.rootWeb.contentTypes.get();
-      var formDocCType = cTypes.filter((c) => c.Name === formDocumentContentTypeName)[0];
       const allUploadPromises = filesToUpload.map((f) => {
-        return this.uploadFiles(parentFolderForFileUpload, f.key, [f.file], formDocCType.Id.StringValue);
+        return this.uploadFiles(parentFolderForFileUpload, f.key, [f.file]);
       });
 
       const allDeletes = filenamesToDelete.map((fileName) => {
@@ -359,7 +364,7 @@ export class FormContentService {
       });
       await Promise.all([...allDeletes, ...allUploadPromises]);
     } else {
-      file = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(formListItem.ID).file.get();
+      file = await sp.web.lists.getByTitle(instanceListName).items.getById(formListItem.ID).file.get();
     }
 
     const parentFolderUrl = file.ServerRelativeUrl.replace("/" + file.Name, "");
@@ -383,12 +388,20 @@ export class FormContentService {
     const updateValues = ListItemToListItemFormUpdateValuesMapper.mapListItemToToFormUpdateValues(itemWithPropsFromSharePointOnly, true);
     const objectForJSON = mapListItemToObject(itemForJSON);
     objectForJSON[formTemplateIdentifierPropertyName] = usedTemplateIdentifier;
+    objectForJSON[formTemplateVersionIdentifierPropertyName] = usedTemplateVersionIdentifier;
+    objectForJSON[ActiveListFieldNames.formInstanceIdentifier] = formListItem.getProperty(ActiveListFieldNames.formInstanceIdentifier)?.value ?? file.Name.replace(".json", "");
     const json = JSON.stringify(objectForJSON);
 
     const fileAddResult = await sp.web.getFolderByServerRelativeUrl(parentFolderUrl).files.add(file.Name, json, true);
     let result: IListItemFormUpdateValue[] = [];
 
-    result = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(itemIdForMetadataUpdate).validateUpdateListItem(updateValues, false);
+    updateValues.push({
+      FieldName: ActiveListFieldNames.formInstanceIdentifier,
+      FieldValue: objectForJSON[ActiveListFieldNames.formInstanceIdentifier],
+      HasException: false,
+      ErrorMessage: ""
+    });
+    result = await sp.web.lists.getByTitle(instanceListName).items.getById(itemIdForMetadataUpdate).validateUpdateListItem(updateValues, false);
     result.forEach((prop) => {
       formListItem.setErrors(prop.FieldName as string, prop.ErrorMessage !== undefined && prop.ErrorMessage !== null && prop.ErrorMessage !== "" ? [prop.ErrorMessage] : []);
       // todo: setValues? I ddont set values here because I do not expect, that SharePoint changes Values on adding
@@ -450,41 +463,7 @@ export class FormContentService {
   };
 
   private loadFormTemplateByIdentifier = async (templateIdentifier: string): Promise<ErrorViewModel<FormTemplate>> => {
-    const now = new Date().toISOString();
-    const formTemplates = await sp.site.rootWeb.lists
-      .getByTitle(ListNames.formTemplateListName)
-      .items.filter(
-        FormTemplateFieldNames.templateIdentifier +
-          " eq '" +
-          templateIdentifier +
-          "' and ( (" +
-          FormTemplateFieldNames.templateFieldNameGueltigVon +
-          " lt '" +
-          now +
-          "' and " +
-          FormTemplateFieldNames.templateFieldNameGueltigBis +
-          " gt '" +
-          now +
-          "') or (   " +
-          FormTemplateFieldNames.templateFieldNameGueltigVon +
-          " lt '" +
-          now +
-          "' and " +
-          FormTemplateFieldNames.templateFieldNameGueltigBis +
-          " eq null  ) )"
-      )
-      .get();
-    // todo: integrate template valid dates valid from and valid until.
-
-    if (formTemplates.length > 0) {
-      const templateItemId = formTemplates[0].ID;
-      const templateModel = await loadFormTemplate(templateItemId);
-      return templateModel;
-    }
-    return {
-      error: "template nicht gefunden",
-      model: undefined
-    };
+    return await loadFormTemplateByIdentifier(templateIdentifier);
   };
 
   AddDocSetVersion = async (webUrl: string, folderUrl: string, comments: string, correlationIdForRequest: string) => {
@@ -513,7 +492,7 @@ export class FormContentService {
     console.log("Response:", response.data);
   };
 
-  private uploadFiles = async (folderPath: string, key: string, files: File[], contentTypeId: string): Promise<void> => {
+  private uploadFiles = async (folderPath: string, key: string, files: File[]): Promise<void> => {
     try {
       // Iterate over the selected files
       for (let i = 0; i < files.length; i++) {
@@ -527,10 +506,7 @@ export class FormContentService {
         const item = await fileAddResult.file.getItem();
 
         // Update the specified field with the provided value
-        await item.update({
-          [ActiveListFieldNames.documentKeyFieldName]: key,
-          ["ContentTypeId"]: contentTypeId
-        });
+        await item.update({});
       }
 
       console.log("Files successfully uploaded");
@@ -539,7 +515,28 @@ export class FormContentService {
     }
   };
 
-  private loadListItemFromFile = async (file: IFile, client: SPHttpClient): Promise<FormListItem> => {
+  private getInstanceListNameByVersion = async (versionIdentifier: string): Promise<string> => {
+    return await getInstanceListNameByVersionIdentifier(versionIdentifier, sp.web);
+  };
+
+  private getAllInstanceListNames = async (): Promise<string[]> => {
+    return await getAllInstanceListNames(sp.web);
+  };
+
+  private findInstanceListNameByItemId = async (itemId: number): Promise<string | undefined> => {
+    const instanceLists = await this.getAllInstanceListNames();
+    for (const listName of instanceLists) {
+      try {
+        await sp.web.lists.getByTitle(listName).items.getById(itemId).select("Id").get();
+        return listName;
+      } catch {
+        // ignore
+      }
+    }
+    return undefined;
+  };
+
+  private loadListItemFromFile = async (file: IFile, client: SPHttpClient, instanceListName: string): Promise<FormListItem> => {
     const fileContent = await file.getJSON();
     const resolvedFile = await file.get();
     let item = await (await file.getItem()).select("FileRef", "FileDirRef", "FileSystemObjectType", "Folder/ServerRelativeUrl", "ID").expand("Folder").get();
@@ -551,16 +548,20 @@ export class FormContentService {
 
     const currentFolderSplittedBySlash = currentFolderUrl.split("/");
     const lastPartOfCurrentFolder = currentFolderSplittedBySlash[currentFolderSplittedBySlash.length - 1];
-    if (lastPartOfCurrentFolder.toLowerCase() !== ListNames.aktiveFormsListName.toLowerCase()) {
+    if (lastPartOfCurrentFolder.toLowerCase() !== instanceListName.toLowerCase()) {
       const serverRelativeFolderUrl = resolvedFile.ServerRelativeUrl.replace("/" + fileName, "");
       item = await (await sp.web.getFolderByServerRelativeUrl(serverRelativeFolderUrl).getItem()).get();
     }
 
     var templateIdentifier = fileContent[formTemplateIdentifierPropertyName];
+    var templateVersionIdentifier = fileContent[formTemplateVersionIdentifierPropertyName];
     var template = await this.loadFormTemplate();
 
     if (templateIdentifier === undefined) {
       templateIdentifier = template.model.templateIdenfitier;
+    }
+    if (templateVersionIdentifier === undefined) {
+      templateVersionIdentifier = template.model.templateVersionIdentifier;
     }
     const defaultFormViewModel = await this.initializeFormViewModel(templateIdentifier);
 
@@ -579,8 +580,8 @@ export class FormContentService {
 
     // ensure values from sharePoint Actie List
     var web = await sp.web.get();
-    var defaultViewFromActiveList = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).defaultView.get();
-    const provider = new SharePointListItemsProvider(web.Url, ListNames.aktiveFormsListName, defaultViewFromActiveList.Title);
+    var defaultViewFromActiveList = await sp.web.lists.getByTitle(instanceListName).defaultView.get();
+    const provider = new SharePointListItemsProvider(web.Url, instanceListName, defaultViewFromActiveList.Title);
     var activeFormItem = await provider.loadListItem(item.ID);
     activeFormItem.getProperties().forEach((p) => {
       var schemaFieldsFromTemplate = template.model.editorModel.customFieldDefinitions.filter((f) => f.internalName == p.description.internalName);
@@ -609,39 +610,19 @@ export class FormContentService {
       '<View Scope="Recursive"><Query><OrderBy><FieldRef Name="FileLeafRef" /></OrderBy> <Where> <Eq><FieldRef Name="FileLeafRef"/><Value Type="Text"><![CDATA[' +
       fileName +
       ']]></Value></Eq> </Where> </Query><ViewFields><FieldRef Name="DocIcon" /><FieldRef Name="LinkFilename" /></ViewFields><RowLimit Paged="TRUE">30</RowLimit><JSLink>clienttemplates.js</JSLink><XslLink Default="TRUE">main.xsl</XslLink><Toolbar Type="Standard"/></View>';
-    const filesFromActiveList = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).renderListDataAsStream({ ViewXml: viewXML });
-    if (filesFromActiveList.Row.length > 0) {
-      const serverRelativeFileUrl = filesFromActiveList.Row[0].FileRef;
 
+    const instanceLists = await this.getAllInstanceListNames();
+    for (const listName of instanceLists) {
       try {
-        const file = sp.web.getFileByServerRelativeUrl(serverRelativeFileUrl);
-
-        return await this.loadListItemFromFile(file, client);
+        const filesFromList = await sp.web.lists.getByTitle(listName).renderListDataAsStream({ ViewXml: viewXML });
+        if (filesFromList.Row.length > 0) {
+          const serverRelativeFileUrl = filesFromList.Row[0].FileRef;
+          const file = sp.web.getFileByServerRelativeUrl(serverRelativeFileUrl);
+          return await this.loadListItemFromFile(file, client, listName);
+        }
       } catch (e) {
-        log.error("could not load forminstance", e);
-        return undefined;
+        log.debug("could not load forminstance in list", { error: e, listName: listName });
       }
-    }
-  };
-  private loadListItemByOriginalFileNameProperty = async (identifier: string, client: SPHttpClient): Promise<FormListItem | undefined> => {
-    const fileName = identifier + ".json";
-    // todo: add filter for contenttype, because originalName also matches the doc set and file
-    const viewXML =
-      '<View Scope="Recursive"><Query><OrderBy><FieldRef Name="FileLeafRef" /></OrderBy> <Where> <Or><And><Eq><FieldRef Name="' +
-      ActiveListFieldNames.originalFileName +
-      '"/><Value Type="Text"><![CDATA[' +
-      fileName +
-      ']]></Value></Eq><Contains><FieldRef Name="FileLeafRef"/><Value Type="Text"><![CDATA[.json]]></Value></Contains></And><And><Eq><FieldRef Name="' +
-      ActiveListFieldNames.originalFileName +
-      '"/><Value Type="Text"><![CDATA[' +
-      identifier +
-      ']]></Value></Eq><Contains><FieldRef Name="FileLeafRef"/><Value Type="Text"><![CDATA[.json]]></Value></Contains></And></Or> </Where> </Query><ViewFields><FieldRef Name="DocIcon" /><FieldRef Name="LinkFilename" /></ViewFields><RowLimit Paged="TRUE">30</RowLimit><JSLink>clienttemplates.js</JSLink><XslLink Default="TRUE">main.xsl</XslLink><Toolbar Type="Standard"/></View>';
-    const filesFromActiveList = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).renderListDataAsStream({ ViewXml: viewXML });
-
-    if (filesFromActiveList.Row.length > 0) {
-      const itemId = filesFromActiveList.Row[0].ID;
-      const file = sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(itemId).file;
-      return this.loadListItemFromFile(file, client);
     }
     return undefined;
   };

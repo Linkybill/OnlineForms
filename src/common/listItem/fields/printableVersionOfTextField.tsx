@@ -1,6 +1,6 @@
 import React from "react";
 import { LabelWithRequiredInfo } from "../labelWithRequiredInfo";
-import renderHTML from "react-render-html";
+import parse from "html-react-parser";
 export const PrintalbeVersionOfTextField = (props: { renderLable?: boolean; fieldValue: string; displayName: string; required: boolean }) => {
   const valToUse = props.fieldValue === undefined || props.fieldValue === null ? "" : props.fieldValue;
   const lineBreakesReplacedHtml = valToUse.replace(/(?:\r\n|\r|\n)/g, "<br>");
@@ -12,7 +12,7 @@ export const PrintalbeVersionOfTextField = (props: { renderLable?: boolean; fiel
           <LabelWithRequiredInfo required={props.required} text={props.displayName} />
         </>
       )}
-      <div className={"printableContentFromTextField"}>{renderHTML(lineBreakesReplacedHtml)} &nbsp;</div>
+      <div className={"printableContentFromTextField"}>{parse(lineBreakesReplacedHtml)} &nbsp;</div>
     </div>
   );
 };

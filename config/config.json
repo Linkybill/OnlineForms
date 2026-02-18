@@ -2,72 +2,81 @@
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
   "version": "2.0",
   "bundles": {
-    "form-template-list-actions-command-set": {
+    "online-forms-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/extensions/formTemplateListActions/FormTemplateListActionsCommandSet.js",
-          "manifest": "./src/extensions/formTemplateListActions/FormTemplateListActionsCommandSet.manifest.json"
+          "entrypoint": "./lib/webparts/onlineForms/OnlineFormsWebPart.js",
+          "manifest": "./src/webparts/onlineForms/OnlineFormsWebPart.manifest.json"
         }
       ]
     },
-    "form-template-context-menues-command-set": {
+    "form-instance-online-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/extensions/formTemplateContextMenues/FormTemplateContextMenuesCommandSet.js",
-          "manifest": "./src/extensions/formTemplateContextMenues/FormTemplateContextMenuesCommandSet.manifest.json"
+          "entrypoint": "./lib/webparts/formInstanceOnline/FormInstanceOnlineWebPart.js",
+          "manifest": "./src/webparts/formInstanceOnline/FormInstanceOnlineWebPart.manifest.json"
         }
       ]
     },
-    "form-instance-web-part": {
+    "form-redirect-web-part-online-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/webparts/formInstance/FormInstanceWebPart.js",
-          "manifest": "./src/webparts/formInstance/FormInstanceWebPart.manifest.json"
+          "entrypoint": "./lib/webparts/formRedirectWebPartOnline/FormRedirectWebPartOnlineWebPart.js",
+          "manifest": "./src/webparts/formRedirectWebPartOnline/FormRedirectWebPartOnlineWebPart.manifest.json"
         }
       ]
     },
-    "form-template-editor-web-part-web-part": {
+    "form-template-editor-web-part-online-web-part": {
       "components": [
         {
-          "entrypoint": "./lib/webparts/formTemplateEditorWebPart/FormTemplateEditorWebPartWebPart.js",
-          "manifest": "./src/webparts/formTemplateEditorWebPart/FormTemplateEditorWebPartWebPart.manifest.json"
+          "entrypoint": "./lib/webparts/formTemplateEditorWebPartOnline/FormTemplateEditorWebPartOnlineWebPart.js",
+          "manifest": "./src/webparts/formTemplateEditorWebPartOnline/FormTemplateEditorWebPartOnlineWebPart.manifest.json"
         }
       ]
     },
-    "form-instance-context-menues-commandset-command-set": {
+    "form-instance-context-menues-commandset-online-command-set": {
       "components": [
         {
-          "entrypoint": "./lib/extensions/formInstanceContextMenuesCommandset/FormInstanceContextMenuesCommandsetCommandSet.js",
-          "manifest": "./src/extensions/formInstanceContextMenuesCommandset/FormInstanceContextMenuesCommandsetCommandSet.manifest.json"
+          "entrypoint": "./lib/extensions/formInstanceContextMenuesCommandsetOnline/FormInstanceContextMenuesCommandsetOnlineCommandSet.js",
+          "manifest": "./src/extensions/formInstanceContextMenuesCommandsetOnline/FormInstanceContextMenuesCommandsetOnlineCommandSet.manifest.json"
         }
       ]
     },
-    "form-redirect-web-part-web-part": {
+    "form-template-context-menues-online-command-set": {
       "components": [
         {
-          "entrypoint": "./lib/webparts/formRedirectWebPart/FormRedirectWebPartWebPart.js",
-          "manifest": "./src/webparts/formRedirectWebPart/FormRedirectWebPartWebPart.manifest.json"
+          "entrypoint": "./lib/extensions/formTemplateContextMenuesOnline/FormTemplateContextMenuesOnlineCommandSet.js",
+          "manifest": "./src/extensions/formTemplateContextMenuesOnline/FormTemplateContextMenuesOnlineCommandSet.manifest.json"
         }
       ]
     },
-    "nova-forms-app-customizer-application-customizer": {
+    "form-template-list-actions-online-command-set": {
       "components": [
         {
-          "entrypoint": "./lib/extensions/novaFormsAppCustomizer/NovaFormsAppCustomizerApplicationCustomizer.js",
-          "manifest": "./src/extensions/novaFormsAppCustomizer/NovaFormsAppCustomizerApplicationCustomizer.manifest.json"
+          "entrypoint": "./lib/extensions/formTemplateListActionsOnline/FormTemplateListActionsOnlineCommandSet.js",
+          "manifest": "./src/extensions/formTemplateListActionsOnline/FormTemplateListActionsOnlineCommandSet.manifest.json"
+        }
+      ]
+    },
+    "nova-forms-app-customizer-online-application-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/novaFormsAppCustomizerOnline/NovaFormsAppCustomizerOnlineApplicationCustomizer.js",
+          "manifest": "./src/extensions/novaFormsAppCustomizerOnline/NovaFormsAppCustomizerOnlineApplicationCustomizer.manifest.json"
         }
       ]
     }
   },
   "externals": {},
   "localizedResources": {
-    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js",
-    "FormTemplateListActionsCommandSetStrings": "lib/extensions/formTemplateListActions/loc/{locale}.js",
-    "FormTemplateContextMenuesCommandSetStrings": "lib/extensions/formTemplateContextMenues/loc/{locale}.js",
-    "FormInstanceWebPartStrings": "lib/webparts/formInstance/loc/{locale}.js",
-    "FormTemplateEditorWebPartWebPartStrings": "lib/webparts/formTemplateEditorWebPart/loc/{locale}.js",
-    "FormInstanceContextMenuesCommandsetCommandSetStrings": "lib/extensions/formInstanceContextMenuesCommandset/loc/{locale}.js",
-    "FormRedirectWebPartWebPartStrings": "lib/webparts/formRedirectWebPart/loc/{locale}.js",
-    "NovaFormsAppCustomizerApplicationCustomizerStrings": "lib/extensions/novaFormsAppCustomizer/loc/{locale}.js"
+    "OnlineFormsWebPartStrings": "lib/webparts/onlineForms/loc/{locale}.js",
+    "FormInstanceOnlineWebPartStrings": "lib/webparts/formInstanceOnline/loc/{locale}.js",
+    "FormRedirectWebPartOnlineWebPartStrings": "lib/webparts/formRedirectWebPartOnline/loc/{locale}.js",
+    "FormTemplateEditorWebPartOnlineWebPartStrings": "lib/webparts/formTemplateEditorWebPartOnline/loc/{locale}.js",
+    "FormInstanceContextMenuesCommandsetOnlineCommandSetStrings": "lib/extensions/formInstanceContextMenuesCommandsetOnline/loc/{locale}.js",
+    "FormTemplateContextMenuesOnlineCommandSetStrings": "lib/extensions/formTemplateContextMenuesOnline/loc/{locale}.js",
+    "FormTemplateListActionsOnlineCommandSetStrings": "lib/extensions/formTemplateListActionsOnline/loc/{locale}.js",
+    "NovaFormsAppCustomizerOnlineApplicationCustomizerStrings": "lib/extensions/novaFormsAppCustomizerOnline/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

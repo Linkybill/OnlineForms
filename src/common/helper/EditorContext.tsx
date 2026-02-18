@@ -6,16 +6,17 @@ import { EditorModel } from "../components/editor/models/EditorModel";
 import { IEditorInfos } from "./IEditorInfos";
 import { FieldDescriptionTypes } from "../listItem/types/FieldDescriptionTypes";
 import { sp } from "@pnp/sp";
-import { ListNames } from "../../extensions/formTemplateListActions/Constants";
 import { FieldTypeNames } from "../listItem/FieldTypeNames";
-import { IFieldAddResult } from "@pnp/sp/fields";
 import { ChoiceFieldDescription } from "../listItem/fields/choiceField/ChoiceFieldDescription";
 import { useComponentContext } from "./CurrentWebPartContext";
-import { createEfav2Client } from "../../clients/efav2ClientCreator";
-import { AddFormColumnDto, FieldCreationInformation } from "../../clients/efav2Client";
-import { Guid } from "@microsoft/sp-core-library";
-import { FieldTypeNumbers } from "../../clients/FieldTypes";
-import { FieldTypeMapping } from "../../clients/FieldTypeMappings";
+import { ChoiceFieldFormatType, DateTimeFieldFormatType, FieldUserSelectionMode, UrlFieldFormatType } from "@pnp/sp/fields";
+import { FormContentService } from "../services/FormContentService";
+import { LookupFieldDescription } from "../listItem/fields/lookupField/LookupFieldDescription";
+import { UserFieldDescription } from "../listItem/fields/userField/UserFieldDescription";
+import { NumberFieldDescription } from "../listItem/fields/numberField/NumberFieldDescription";
+import { CurrencyFieldDescription } from "../listItem/fields/currencyField/CurrencyFieldDescription";
+import { DateTimeDisplayMode, DateTimeFieldDescription } from "../listItem/fields/dateTimeField/DateTimeFieldDescription";
+import { UrlFieldDescription } from "../listItem/fields/urlField/UrlFieldDescription";
 
 const EditorContext = React.createContext<IEditorInfos | undefined>(undefined);
 
@@ -24,6 +25,8 @@ export const useEditorContext = () => useContext(EditorContext);
 export const EditorContextProvider: React.FC<{
   editorModel: EditorModel;
   isInEditMode: boolean;
+  instanceListName?: string;
+  templateVersionIdentifier?: string;
   children?: JSX.Element | JSX.Element[];
 }> = (props): JSX.Element => {
   log.debug("rendering editorcontextProvider with props", props);
@@ -31,6 +34,7 @@ export const EditorContextProvider: React.FC<{
   const [lastUsedCellWidth, setLastUsedCellWidth] = useState(6);
   const history = useHistory(props.editorModel);
   const componentContext = useComponentContext();
+  const instanceListNameRef = useRef<string | undefined>(props.instanceListName);
 
   const [editorModel, setEditorModel] = useState<EditorModel>({
     ...props.editorModel,
@@ -41,95 +45,114 @@ export const EditorContextProvider: React.FC<{
     mirroredSPListFields: props.editorModel.mirroredSPListFields !== null && props.editorModel.mirroredSPListFields !== undefined ? props.editorModel.mirroredSPListFields : []
   });
   const [fieldNameBeingEdited, setFieldNameBeingEdited] = useState<string | undefined>(undefined);
+  const resolveInstanceListName = async (): Promise<string | undefined> => {
+    if (instanceListNameRef.current) {
+      return instanceListNameRef.current;
+    }
+    if (props.templateVersionIdentifier) {
+      try {
+        const service = new FormContentService();
+        instanceListNameRef.current = await service.resolveInstanceListNameByVersion(props.templateVersionIdentifier);
+      } catch (e) {
+        log.warn("could not resolve instance list name", e);
+      }
+    }
+    return instanceListNameRef.current;
+  };
   const createFieldInSharePoint = async (toggledField: FieldDescriptionTypes) => {
-    const fields = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).fields.filter(`InternalName eq '${toggledField.internalName}'`).get();
+    const listName = await resolveInstanceListName();
+    if (!listName) {
+      log.warn("skipping field creation: instance list name not resolved");
+      return;
+    }
+    const fields = await sp.web.lists.getByTitle(listName).fields.filter(`InternalName eq '${toggledField.internalName}'`).get();
     if (fields.length == 0) {
-      let fieldAddResult: IFieldAddResult | undefined = undefined;
-      var resolvedWeb = await sp.web.get();
-      const commonCreateProps: AddFormColumnDto = new AddFormColumnDto({
-        webUrl: resolvedWeb.Url,
-        field: new FieldCreationInformation({
-          fillInChoice: true,
-          displayName: toggledField.displayName,
-          group: "angehobene Formularfelder",
-          fieldType: FieldTypeNumbers.Invalid,
-          id: Guid.newGuid().toString(),
-          internalName: toggledField.internalName
-        })
-      });
-
+      const list = sp.web.lists.getByTitle(listName);
+      const baseProperties = {
+        Group: "angehobene Formularfelder",
+        Description: toggledField.description ?? "",
+        Required: toggledField.required === true
+      };
       switch (toggledField.type) {
-        case FieldTypeNames.Text:
-        case FieldTypeNames.Boolean:
-        case FieldTypeNames.Choice:
-        case FieldTypeNames.MultiChoice: /*{
-          const choiceField = toggledField as ChoiceFieldDescription;
-          if (choiceField.enableMultipleSelections === true) {
-            fieldAddResult = await activeList.fields.addMultiChoice(toggledField.internalName, choiceField.choices, false, commonCreateProps);
-          } else {
-            fieldAddResult = await activeList.fields.addChoice(toggledField.internalName, choiceField.choices, undefined, false, commonCreateProps);
+        case FieldTypeNames.Text: {
+          await list.fields.addText(toggledField.internalName, undefined, baseProperties);
+          break;
+        }
+        case FieldTypeNames.Note: {
+          await list.fields.addMultilineText(toggledField.internalName, undefined, true, false, false, true, baseProperties);
+          break;
+        }
+        case FieldTypeNames.Boolean: {
+          await list.fields.addBoolean(toggledField.internalName, baseProperties);
+          break;
+        }
+        case FieldTypeNames.Number: {
+          const numberField = toggledField as NumberFieldDescription;
+          await list.fields.addNumber(toggledField.internalName, undefined, undefined, baseProperties);
+          if (numberField.numberOfDecimals !== undefined) {
+            await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ Decimals: numberField.numberOfDecimals });
           }
           break;
-        }*/
-        case FieldTypeNames.Currency:
-
-        case FieldTypeNames.DateTime: /*{
-          var dateTimeField = toggledField as DateTimeFieldDescription;
-          fieldAddResult = await activeList.fields.addDateTime(
-            toggledField.internalName,
-            dateTimeField.displayMode === 0 ? DateTimeFieldFormatType.DateOnly : DateTimeFieldFormatType.DateTime,
-            undefined,
-            undefined,
-            commonCreateProps
-          );
+        }
+        case FieldTypeNames.Currency: {
+          const currencyField = toggledField as CurrencyFieldDescription;
+          await list.fields.addCurrency(toggledField.internalName, undefined, undefined, currencyField.currencyLocaleId, baseProperties);
+          if (currencyField.numberOfDecimals !== undefined) {
+            await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ Decimals: currencyField.numberOfDecimals });
+          }
           break;
-        }*/
-
-        case FieldTypeNames.Note:
-
-        case FieldTypeNames.Number:
-
-        case FieldTypeNames.URL:
+        }
+        case FieldTypeNames.DateTime: {
+          const dateField = toggledField as DateTimeFieldDescription;
+          const format = dateField.displayMode === DateTimeDisplayMode.DateAndTime ? DateTimeFieldFormatType.DateTime : DateTimeFieldFormatType.DateOnly;
+          await list.fields.addDateTime(toggledField.internalName, format, undefined, undefined, baseProperties);
+          break;
+        }
+        case FieldTypeNames.Choice: {
+          const choiceField = toggledField as ChoiceFieldDescription;
+          const format = choiceField.representation === "Checkbox / Radio" ? ChoiceFieldFormatType.RadioButtons : ChoiceFieldFormatType.Dropdown;
+          await list.fields.addChoice(toggledField.internalName, choiceField.choices ?? [], format, choiceField.fillInChoiceEnabled === true, baseProperties);
+          break;
+        }
+        case FieldTypeNames.MultiChoice: {
+          const choiceField = toggledField as ChoiceFieldDescription;
+          await list.fields.addMultiChoice(toggledField.internalName, choiceField.choices ?? [], choiceField.fillInChoiceEnabled === true, baseProperties);
+          break;
+        }
+        case FieldTypeNames.URL: {
+          const urlField = toggledField as UrlFieldDescription;
+          const format = urlField.isImageUrl === true ? UrlFieldFormatType.Image : UrlFieldFormatType.Hyperlink;
+          await list.fields.addUrl(toggledField.internalName, format, baseProperties);
+          break;
+        }
         case FieldTypeNames.User:
         case FieldTypeNames.UserMulti: {
-          /*await efaClient.addFormColumn(
-            new AddFormColumnDto({
-              webUrl: resolvedWeb.Url,
-              field:{
-                id: Guid.newGuid().toString(),
-                group:"angehobene Felder",
-                displayName:toggledField.displayName,
-                internalName: toggledField.internalName,
-                fieldType: FieldType._12
-              }
-            })
-          );
-          break;*/
-          commonCreateProps.field.fieldType = FieldTypeMapping[toggledField.type];
-
+          const userField = toggledField as UserFieldDescription;
+          const mode = userField.allowGroupSelection === true ? FieldUserSelectionMode.PeopleAndGroups : FieldUserSelectionMode.PeopleOnly;
+          await list.fields.addUser(toggledField.internalName, mode, baseProperties);
+          if (userField.canSelectMultipleItems === true || toggledField.type === FieldTypeNames.UserMulti) {
+            await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ AllowMultipleValues: true });
+          }
+          if (userField.groupId !== undefined) {
+            await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ SelectionGroup: userField.groupId });
+          }
+          break;
+        }
+        case FieldTypeNames.Lookup:
+        case FieldTypeNames.LookupMulti: {
+          const lookupField = toggledField as LookupFieldDescription;
+          await list.fields.addLookup(toggledField.internalName, lookupField.lookupListId, lookupField.lookupField, baseProperties);
+          if (lookupField.canSelectMultipleItems === true || toggledField.type === FieldTypeNames.LookupMulti) {
+            await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ AllowMultipleValues: true });
+          }
           break;
         }
         default: {
-          log.error("Field is not supported for adding in SharePoint");
+          log.warn("Field is not supported for auto-creation in SharePoint", toggledField.type);
         }
       }
-      if (toggledField.type === FieldTypeNames.Choice || toggledField.type === FieldTypeNames.MultiChoice) {
-        var choiceFieldDef = toggledField as ChoiceFieldDescription;
-        if (choiceFieldDef.choices.length > 0) {
-          commonCreateProps.field.choices = choiceFieldDef.choices;
-          commonCreateProps.field.fillInChoice = true;
-          commonCreateProps.field.format = "Dropdown";
-          commonCreateProps.field.fieldType = choiceFieldDef.enableMultipleSelections === true ? FieldTypeNumbers.MultiChoice : FieldTypeNumbers.Choice;
-        } else {
-          commonCreateProps.field.fieldType = FieldTypeNumbers.Invalid;
-        }
-      }
-      if ((commonCreateProps.field.fieldType as number) != FieldTypeNumbers.Invalid) {
-        var efaClient = await createEfav2Client("");
-        await efaClient.addFormColumn(commonCreateProps);
-      }
-      if (fieldAddResult !== undefined) {
-        //await sp.web.fields.createFieldAsXml(res.data.SchemaXml);
+      if (toggledField.displayName && toggledField.displayName !== toggledField.internalName) {
+        await list.fields.getByInternalNameOrTitle(toggledField.internalName).update({ Title: toggledField.displayName });
       }
     }
   };

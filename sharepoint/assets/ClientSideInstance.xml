@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Elements xmlns="http://schemas.microsoft.com/sharepoint/">
     <ClientSideComponentInstance
-        Title="FormTemplateListActions"
+        Title="FormInstanceContextMenuesCommandsetOnline"
         Location="ClientSideExtension.ListViewCommandSet.CommandBar"
-        ListTemplateId="101"
-        ComponentId="565fe5e5-9e6a-4450-a0ec-ccc8597b03e1" />
+        ListTemplateId="100"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="f23a6d97-1483-46b6-9213-6f9c856abb70" />
     <ClientSideComponentInstance
-        Title="FormTemplateContextMenues"
-        Location="ClientSideExtension.ListViewCommandSet"
-        ListTemplateId="101"
-        ComponentId="a506165e-3619-498e-8b99-b9f817a3c2af" />
-        <ClientSideComponentInstance
-        Title="FormInstanceListActions"
-        Location="ClientSideExtension.ListViewCommandSet"
-        ListTemplateId="101"
-        ComponentId="39e7ab46-09f2-4b1e-a660-a94cdf42f716" />
+        Title="FormTemplateContextMenuesOnline"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="100"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="fd44cdca-5e8e-429b-91ba-bfd921035919" />
+    <ClientSideComponentInstance
+        Title="FormTemplateListActionsOnline"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="100"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="cbacc646-277b-40b8-a35e-ed85ea649c5f" />
+    <ClientSideComponentInstance
+        Title="NovaFormsAppCustomizerOnline"
+        Location="ClientSideExtension.ApplicationCustomizer"
+        Properties="{}"
+        ComponentId="3ddd6a77-b36c-42cd-a534-6545b4304819" />
 </Elements>

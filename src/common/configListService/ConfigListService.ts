@@ -1,10 +1,9 @@
 import { IWeb } from "@pnp/sp/webs";
-import { ConfigFieldNames, ListNames } from "../../extensions/formTemplateListActions/Constants";
+import { ConfigFieldNames, ListNames } from "../../extensions/formTemplateListActionsOnline/Constants";
 import { ConfigListItem } from "../../extensions/common/models/ConfigListItem";
 
 export class ConfigListService {
   static formTemplateConfigName = "formTemplateConfig";
-  static formWebTitleConfigName = "Formular Titel";
   static formPrefixConfigName = "FormPrefix";
   static swaggerDatasourcesConfigName = "Datenquellen";
 
@@ -23,6 +22,19 @@ export class ConfigListService {
 
   public static getConfigStrings = async <TConfig>(webInfo: IWeb, configName: string): Promise<ConfigListItem<string>[]> => {
     const configItems = await webInfo.lists.getByTitle(ListNames.configListName).items.filter(ConfigFieldNames.configNameFieldName + " eq '" + configName + "'")();
+    return configItems.map((item) => {
+      const config: string = item[ConfigFieldNames.configValueFieldName];
+      const itemId = item.ID;
+      return {
+        config: config,
+        itemId: itemId
+      };
+    });
+  };
+
+  public static getConfigStringsByPrefix = async (webInfo: IWeb, configNamePrefix: string): Promise<ConfigListItem<string>[]> => {
+    const filter = "startswith(" + ConfigFieldNames.configNameFieldName + ", '" + configNamePrefix + "')";
+    const configItems = await webInfo.lists.getByTitle(ListNames.configListName).items.filter(filter)();
     return configItems.map((item) => {
       const config: string = item[ConfigFieldNames.configValueFieldName];
       const itemId = item.ID;
@@ -68,5 +80,21 @@ export class ConfigListService {
       itemId: itemId,
       config: config
     });
+  };
+
+  static upsertConfigString = async (webInfo: IWeb, configName: string, configValue: string): Promise<ConfigListItem<string>> => {
+    const configItems = await webInfo.lists.getByTitle(ListNames.configListName).items.filter(ConfigFieldNames.configNameFieldName + " eq '" + configName + "'")();
+    if (configItems.length === 0) {
+      return await ConfigListService.addConfig<string>(webInfo, configName, configValue);
+    }
+    const itemId = configItems[0].ID;
+    const itemUpdateResult = await webInfo.lists
+      .getByTitle(ListNames.configListName)
+      .items.getById(itemId)
+      .update({ [ConfigFieldNames.configValueFieldName]: configValue });
+    return {
+      itemId: itemId,
+      config: itemUpdateResult.data[ConfigFieldNames.configValueFieldName]
+    };
   };
 }

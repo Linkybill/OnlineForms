@@ -1,17 +1,17 @@
 {
+  "extends": "./node_modules/@microsoft/spfx-web-build-rig/profiles/default/tsconfig-base.json",
   "compilerOptions": {
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noImplicitThis": false,
+    "useUnknownInCatchVariables": false,
     "allowSyntheticDefaultImports": true,
-    "target": "es5",
-    "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "jsx": "react",
-    "declaration": true,
-    "sourceMap": true,
-    "experimentalDecorators": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/@microsoft"],
+    "typeRoots": ["./node_modules/@types", "./node_modules/@microsoft", "./src/types"],
     "types": ["es6-promise", "webpack-env", "microsoft-ajax", "sharepoint"],
-    "lib": ["es2016", "es5", "es6", "ES2018", "dom", "es2015.collection"]
-  }
+    "lib": ["es5", "dom", "dom.iterable", "es2015.collection", "es2015.promise", "es2015.iterable", "es2015.symbol", "es2016", "es2017", "es2018", "es2019"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "exclude": ["src/clients/efav2Client.ts", "src/clients/efav2ClientCreator.ts"]
 }

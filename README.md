@@ -1,40 +1,77 @@
-## NOVA-SharePoint-Forms
+# online-forms
 
-This is where you include your WebPart documentation.
+## Summary
 
-### Building the code
+Short summary on functionality and used technologies.
 
-```bash
-git clone the repo
-npm i
-npm i -g gulp
-gulp
-```
+[picture of the solution in action, if possible]
 
-This package produces the following:
+## Used SharePoint Framework Version
 
-- lib/\* - intermediate-stage commonjs build artifacts
-- dist/\* - the bundled script, along with other resources
-- deploy/\* - all resources which should be uploaded to a CDN.
+![version](https://img.shields.io/badge/version-1.22.2-green.svg)
 
-### Build options
+## Applies to
 
-gulp clean - TODO
-gulp test - TODO
-gulp serve - TODO
-gulp bundle - TODO
-gulp package-solution - TODO
+- [SharePoint Framework](https://aka.ms/spfx)
+- [Microsoft 365 tenant](https://docs.microsoft.com/sharepoint/dev/spfx/set-up-your-developer-tenant)
 
-working debug url with extensions
-loadSPFX=true
-&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js
-&customActions=%7B%22565fe5e5-9e6a-4450-a0ec-ccc8597b03e1%22%3A%7B%22location%22%3A%22ClientSideExtension.ListViewCommandSet.CommandBar%22%2C%22properties%22%3A%7B%22sampleTextOne%22%3A%22One%20item%20is%20selected%20in%20the%20list%22%2C%22sampleTextTwo%22%3A%22This%20command%20is%20always%20visible.%22%7D%7D%2C%223c08907f-e984-408b-8ab3-6df1e68030e2%22%3A%7B%22location%22%3A%22ClientSideExtension.ApplicationCustomizer%22%2C%22properties%22%3A%7B%22testMessage%22%3A%22Hallo%20vom%20Debug!%22%7D%7D%7D
+> Get your own free development tenant by subscribing to [Microsoft 365 developer program](http://aka.ms/o365devprogram)
 
-Environment:
+## Prerequisites
 
-nvm install 12
-nvm use 12
-npm install gulp-cli@2.3.0 --global
-npm install yo@3.1.1 --global
-npm install @microsoft/generator-sharepoint@1.10.0 --global
-npm install spfx-fast-serve --global
+> Any special pre-requisites?
+
+## Solution
+
+| Solution    | Author(s)                                               |
+| ----------- | ------------------------------------------------------- |
+| folder name | Author details (name, company, twitter alias with link) |
+
+## Version history
+
+| Version | Date             | Comments        |
+| ------- | ---------------- | --------------- |
+| 1.1     | March 10, 2021   | Update comment  |
+| 1.0     | January 29, 2021 | Initial release |
+
+## Disclaimer
+
+**THIS CODE IS PROVIDED _AS IS_ WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
+
+---
+
+## Minimal Path to Awesome
+
+- Clone this repository
+- Ensure that you are at the solution folder
+- in the command-line run:
+  - `npm install -g @rushstack/heft`
+  - `npm install`
+  - `heft start`
+
+> Include any additional steps as needed.
+
+Other build commands can be listed using `heft --help`.
+
+## Features
+
+Description of the extension that expands upon high-level summary above.
+
+This extension illustrates the following concepts:
+
+- topic 1
+- topic 2
+- topic 3
+
+> Notice that better pictures and documentation will increase the sample usage and the value you are providing for others. Thanks for your submissions advance.
+
+> Share your web part with others through Microsoft 365 Patterns and Practices program to get visibility and exposure. More details on the community, open-source projects and other activities from http://aka.ms/m365pnp.
+
+## References
+
+- [Getting started with SharePoint Framework](https://docs.microsoft.com/sharepoint/dev/spfx/set-up-your-developer-tenant)
+- [Building for Microsoft teams](https://docs.microsoft.com/sharepoint/dev/spfx/build-for-teams-overview)
+- [Use Microsoft Graph in your solution](https://docs.microsoft.com/sharepoint/dev/spfx/web-parts/get-started/using-microsoft-graph-apis)
+- [Publish SharePoint Framework applications to the Marketplace](https://docs.microsoft.com/sharepoint/dev/spfx/publish-to-marketplace-overview)
+- [Microsoft 365 Patterns and Practices](https://aka.ms/m365pnp) - Guidance, tooling, samples and open-source controls for your Microsoft 365 development
+- [Heft Documentation](https://heft.rushstack.io/)

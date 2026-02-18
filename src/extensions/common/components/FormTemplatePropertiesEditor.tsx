@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { IconButton, TextField, Toggle } from "@fluentui/react";
+import { IconButton, TextField } from "@fluentui/react";
 import { FormTemplate } from "../models/FormTemplate";
-import { addNewTemplateAndConfigureExistingWeb, addNewTemplateWithNewWeb } from "../../../common/formTemplates/services/FormTemplateService";
-import { WebPicker } from "../../../common/components/picker/components/WebPicker";
+import { addNewTemplateWithNewWeb } from "../../../common/formTemplates/services/FormTemplateService";
 import { WithErrorsTop } from "../../../common/components/errorComponent/WithErrorsTop";
 import { DateTimeField } from "../../../common/listItem/fields/dateTimeField/DateTimeField";
 import { DateTimeDisplayMode } from "../../../common/listItem/fields/dateTimeField/DateTimeFieldDescription";
@@ -23,8 +22,6 @@ export const FormTemplatePropertiesEditor = (props: { baseTemplateId: number | u
     currentETag: "1"
   });
 
-  const [selectedWebIdsForNewWebCreation, setSelectedWebIdsForNewWebCreation] = useState<string[]>([]);
-  const [shouldCreateNewWeb, setShouldCreateNewWeb] = useState<boolean>(true);
   const [error, setError] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const loadingIndicatorContext = useLoadingIndicatorContext();
@@ -33,43 +30,19 @@ export const FormTemplatePropertiesEditor = (props: { baseTemplateId: number | u
       return false;
     }
 
-    if (shouldCreateNewWeb === false) {
-      return selectedWebIdsForNewWebCreation.length === 1 && template.title !== "";
-    }
-    return true;
+    return template.title !== "";
   };
 
   const submitForm = async (): Promise<void> => {
     setIsLoading(true);
     loadingIndicatorContext.setLoadingIndication(true, "Vorlage wird gespeichert");
-    if (shouldCreateNewWeb === true) {
-      const result = await addNewTemplateWithNewWeb(template.title, template.description, template.validFrom, template.validUntil, Guid.newGuid().toString(), Guid.newGuid().toString(), props.baseTemplateId);
-      setTemplate(result.model);
-      setError(result.error);
-      setIsLoading(false);
-      loadingIndicatorContext.setIsLoading(false);
-      if (result.error === undefined) {
-        props.onUpdateSuccessfull(result.model);
-      }
-    } else {
-      const result = await addNewTemplateAndConfigureExistingWeb(
-        template.title,
-        template.description,
-        template.validFrom,
-        template.validUntil,
-        Guid.newGuid().toString(),
-        Guid.newGuid().toString(),
-        selectedWebIdsForNewWebCreation[0],
-        props.baseTemplateId
-      );
-
-      setTemplate(result.model);
-      setError(result.error);
-      setIsLoading(false);
-      loadingIndicatorContext.setIsLoading(false);
-      if (result.error === undefined) {
-        props.onUpdateSuccessfull(result.model);
-      }
+    const result = await addNewTemplateWithNewWeb(template.title, template.description, template.validFrom, template.validUntil, Guid.newGuid().toString(), Guid.newGuid().toString(), props.baseTemplateId);
+    setTemplate(result.model);
+    setError(result.error);
+    setIsLoading(false);
+    loadingIndicatorContext.setIsLoading(false);
+    if (result.error === undefined) {
+      props.onUpdateSuccessfull(result.model);
     }
   };
 
@@ -143,28 +116,6 @@ export const FormTemplatePropertiesEditor = (props: { baseTemplateId: number | u
           validationErrors={[]}
         />
 
-        <>
-          <Toggle
-            label={"neues Web anlegen?"}
-            checked={shouldCreateNewWeb}
-            onChange={(ev, val) => {
-              setShouldCreateNewWeb(val);
-            }}
-          />
-
-          {shouldCreateNewWeb === false && (
-            <>
-              <WebPicker
-                allowMultipleSelections={false}
-                label="Formular web auswählen"
-                selectedWebIds={selectedWebIdsForNewWebCreation}
-                editMode={true}
-                onSelectionApproved={(ids) => {
-                  setSelectedWebIdsForNewWebCreation(ids.map((id) => id.Id.toString()));
-                }}></WebPicker>
-            </>
-          )}
-        </>
         <IconButton iconProps={{ iconName: "Save" }} text="Übernehmen" disabled={validateForm() === false} onClick={submitForm} />
       </WithErrorsTop>
     </>

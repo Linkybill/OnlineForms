@@ -1,4 +1,4 @@
-import "office-ui-fabric-react/dist/css/fabric.css";
+import "@fluentui/react/dist/css/fabric.css";
 import { GridRow } from "./models/gridRow";
 import { GridCell } from "./models/gridCell";
 import { Grid } from "./grid";

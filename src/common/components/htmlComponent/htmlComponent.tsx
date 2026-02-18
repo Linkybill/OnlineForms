@@ -1,5 +1,5 @@
 import { IHtmlProps } from "./iHtmlProps";
-import renderHTML from "react-render-html";
+import parse from "html-react-parser";
 import * as React from "react";
 import { useListItemContext } from "../../helper/ListItemContext";
 import { mapListItemToObject } from "../../listItem/mapper/ListItemToObjectMapper";
@@ -9,5 +9,5 @@ export const Html: (props: IHtmlProps) => JSX.Element = (props: IHtmlProps) => {
 
   const dataObjectForPlaceHolder = mapListItemToObject(itemContext.getListItem());
   const replacedHtml = format(props.html !== null ? props.html : "", dataObjectForPlaceHolder);
-  return <span className="htmlContent">{renderHTML(replacedHtml)}</span>;
+  return <span className="htmlContent">{parse(replacedHtml)}</span>;
 };

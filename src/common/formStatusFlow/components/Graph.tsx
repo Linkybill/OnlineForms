@@ -8,8 +8,8 @@ export const Graph = (props: { graphData: IGraphNode[] }): JSX.Element => {
   });
   mermaid.initialize({
     startOnLoad: true,
-    theme: "default",
-    securityLevel: "loose",
+    theme: "default" as any,
+    securityLevel: "loose" as any,
 
     themeCSS: `
     

@@ -1,0 +1,25 @@
+/**
+ * Configures the Sass Typings plugin for the Heft build system.
+ *
+ * This optional additional file customizes Sass parsing, module resolution, and emitting of
+ * typings files for the Typescript compiler.
+ */
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/heft/v0/heft-sass-plugin.schema.json",
+
+  /**
+   * Files with these extensions will pass through the Sass transpiler for typings generation.
+   */
+  "fileExtensions": [".sass", ".scss", ".css"],
+
+  /**
+   * Files with these extensions will pass through the Sass transpiler for typings generation.
+   * They will be treated as non-module SCSS.
+   */
+  "nonModuleFileExtensions": [".global.sass", ".global.scss", ".global.css"],
+
+  /**
+   * Output directories for compiled CSS
+   */
+  "cssOutputFolders": ["lib", "lib-commonjs"]
+}

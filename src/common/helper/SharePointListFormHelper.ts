@@ -1,5 +1,5 @@
 import { sp } from "@pnp/sp";
-import { ListNames } from "../../extensions/formTemplateListActions/Constants";
+import { ListNames } from "../../extensions/formTemplateListActionsOnline/Constants";
 import { loadFieldSchema } from "../listItem/helper/ListHelper";
 import { ListItem } from "../listItem/ListItem";
 import { ListItemToListItemFormUpdateValuesMapper } from "../components/formcomponents/mapper/ListItemToListItemFormUpdateValuesMapper";

@@ -6,17 +6,9 @@
     "**/.DS_Store": true,
     "**/bower_components": true,
     "**/coverage": true,
+    "**/jest-output": true,
     "**/lib-amd": true,
     "src/**/*.scss.ts": true
   },
-  "typescript.tsdk": ".\\node_modules\\typescript\\lib",
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "prettier.configPath": "./.prettierrc.js",
-  "editor.formatOnSave": true,
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "chatgpt.openOnStartup": true,
-  "chatgpt.runCodexInWindowsSubsystemForLinux": true,
-  "chatgpt.commentCodeLensEnabled": false
+  "typescript.tsdk": ".\\node_modules\\typescript\\lib"
 }

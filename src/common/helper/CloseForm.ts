@@ -1,4 +1,4 @@
-import { QueryParameterNames } from "../../webparts/formInstance/models/Constants";
+import { QueryParameterNames } from "../../webparts/formInstanceOnline/models/Constants";
 
 export const closeFormWithRedirect = () => {
   const params = new URLSearchParams(location.search);

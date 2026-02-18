@@ -8,8 +8,7 @@ import { BooleanField } from "../../../listItem/fields/booleanField/BooleanField
 import { BooleanFieldDescription } from "../../../listItem/fields/booleanField/BooleanFieldDescription";
 import { SharePointCreateListItemsTriggerConfig } from "../../models/sharePointCreateListItems/SharePointCreateListItemsTriggerConfig";
 import { SharePointCreateListItemsParameterMapper } from "./SharePointCreateListItemsParameterMapper";
-import { createEfav2Client } from "../../../../clients/efav2ClientCreator";
-import { FieldInfoViewModel, ListSchemaViewModel } from "../../../../clients/efav2Client";
+import { sp } from "@pnp/sp";
 import { ParameterV2 } from "../../../components/editor/components/ParameterPicker/ParameterV2";
 import { ModalWithCloseButton } from "../../../components/modals/ModalWithCloseButton";
 import { ParameterPickerLoadingOptions, ParameterPickerV2 } from "../../../components/editor/components/ParameterPicker/ParameterPickerV2";
@@ -17,7 +16,14 @@ import { ParameterInformationContextProvider } from "../../../components/editor/
 
 const knownFieldTypeNames = new Set<string>(Object.values(FieldTypeNames));
 
-const mapListSchemaFieldsToParameters = (fields?: FieldInfoViewModel[]): ParameterV2[] => {
+type IListFieldInfo = {
+  internalName?: string;
+  title?: string;
+  typeAsString?: string;
+  readOnlyField?: boolean;
+};
+
+const mapListSchemaFieldsToParameters = (fields?: IListFieldInfo[]): ParameterV2[] => {
   if (!fields || fields.length === 0) {
     return [];
   }
@@ -119,8 +125,24 @@ export const SharePointCreateListItemsTriggerEditor = (props: {
       setSchemaLoading(true);
       setSchemaError(undefined);
       try {
-        const client = await createEfav2Client("");
-        const schema: ListSchemaViewModel = await client.loadListSchema(webUrl, listName);
+        const currentWebUrl = (await sp.web.get()).Url;
+        if (webUrl.toLowerCase() !== currentWebUrl.toLowerCase()) {
+          setSchemaParameters([]);
+          setSchemaError("Listen-Schema kann nur im aktuellen Web geladen werden.");
+          return;
+        }
+        const fields = await sp.web.lists
+          .getByTitle(listName)
+          .fields.select("InternalName", "Title", "TypeAsString", "ReadOnlyField")
+          .get();
+        const schema = {
+          fields: fields.map((field) => ({
+            internalName: field.InternalName,
+            title: field.Title,
+            typeAsString: field.TypeAsString,
+            readOnlyField: field.ReadOnlyField === true
+          }))
+        };
         if (cancelled || currentRequestId !== requestId.current) {
           return;
         }

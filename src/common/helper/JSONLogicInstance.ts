@@ -5,7 +5,7 @@ import { Guid } from "@microsoft/sp-core-library";
 import log from "loglevel";
 import { IListItemAccessor } from "./ListItemContext";
 import { mapListItemToObject } from "../listItem/mapper/ListItemToObjectMapper";
-import * as dayjs from "dayjs";
+import dayjs from "dayjs";
 import { IGraphDataResponseDto } from "../formStatusFlow/models/GraphResponse";
 import { PermissionInfos } from "./PermissionContext";
 import { TextKeyChoice } from "../listItem/fields/choiceField/ChoiceFieldDescription";

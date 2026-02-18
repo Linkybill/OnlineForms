@@ -22,7 +22,7 @@ export const WebPicker: React.FC<{
         const webs = sp.site.rootWeb.getSubwebsFilteredForCurrentUser().get();
         const rootWeb = (await sp.site.getRootWeb()).get();
         const [resolvedWebs, resolvedRootWeb] = await Promise.all([webs, rootWeb]);
-        loadedWebs.current = [resolvedRootWeb, ...resolvedWebs];
+        loadedWebs.current = [resolvedRootWeb as unknown as IWebInfo, ...(resolvedWebs as unknown as IWebInfo[])];
         log.debug("webpicker: loaded webs", webs);
         setLoading(false);
       } catch (e) {

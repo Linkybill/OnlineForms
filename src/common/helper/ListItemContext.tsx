@@ -36,11 +36,10 @@ import { createDefaultItem } from "../listItem/helper/ListHelper";
 import { useServerLoggingContext } from "../logging/ServerLoggingContext";
 import { Logmodel } from "../logging/LogModel";
 import { JsonLogicHelper } from "./JSONLogicHelper";
-import { createEfav2Client } from "../../clients/efav2ClientCreator";
-import { CreateListItemsRequestDto } from "../../clients/efav2Client";
 import { SharePointCreateListItemsTriggerConfig } from "../actions/models/sharePointCreateListItems/SharePointCreateListItemsTriggerConfig";
 import { ParameterMapping } from "../actions/models/datasources/ParameterMapping";
 import { SetRepeatedListFieldTriggerConfig } from "../actions/models/setRepeatedListField/SetRepeatedListFieldTriggerConfig";
+import { sp } from "@pnp/sp";
 
 // todo: Seperate context into ListItemContext, ParameterContext and ConditionContext, where COnditionContext has access to ListItemContext and ParameterContext
 export interface IListItemAccessor {
@@ -197,6 +196,20 @@ export const ListItemContextProvider: React.FC<IListItemContextProviderProps> = 
   const triggerInterruption = useRef<boolean>(false);
   const configContext = useFormConfigurationContext();
   const loggingContext = useServerLoggingContext();
+
+  const normalizeWebUrl = (webUrl: string | undefined): string => {
+    if (webUrl === undefined || webUrl === null) {
+      return "";
+    }
+    const trimmed = webUrl.trim();
+    if (trimmed === "") {
+      return "";
+    }
+    if (trimmed.startsWith("/")) {
+      return window.location.protocol + "//" + window.location.host + trimmed;
+    }
+    return trimmed;
+  };
 
   const showMessage = (message: string, messageBarType: MessageBarType) => {
     setMessage(message);
@@ -513,20 +526,6 @@ export const ListItemContextProvider: React.FC<IListItemContextProviderProps> = 
     return path.startsWith("/") ? path : "/" + path;
   };
 
-  const normalizeWebUrl = (webUrl: string | undefined): string => {
-    if (webUrl === undefined || webUrl === null) {
-      return "";
-    }
-    const trimmed = webUrl.trim();
-    if (trimmed === "") {
-      return "";
-    }
-    if (trimmed.startsWith("/")) {
-      return window.location.protocol + "//" + window.location.host + trimmed;
-    }
-    return trimmed;
-  };
-
   const extractTargetFieldName = (targetPath: string, fallback: string): string => {
     if (fallback !== undefined && fallback !== "") {
       return fallback;
@@ -729,14 +728,16 @@ export const ListItemContextProvider: React.FC<IListItemContextProviderProps> = 
                 break;
               }
 
-              const dto = new CreateListItemsRequestDto({
-                webUrl: webUrl,
-                listTitle: config.listName,
-                items: itemsToCreate
-              });
-
-              const efaClient = await createEfav2Client(loggingContext.getCurrentCorrelationId());
-              await efaClient.createListItems(dto);
+              const currentWebUrl = (await sp.web.get()).Url;
+              if (webUrl !== "" && webUrl.toLowerCase() !== currentWebUrl.toLowerCase()) {
+                log.warn("Abweichende WebUrl wird aktuell nicht unterstützt. Es wird nur im aktuellen Web angelegt.", {
+                  configWebUrl: webUrl,
+                  currentWebUrl: currentWebUrl
+                });
+              }
+              for (const itemToCreate of itemsToCreate) {
+                await sp.web.lists.getByTitle(config.listName).items.add(itemToCreate);
+              }
             } catch (e) {
               log.error("Fehler beim Anlegen von SharePoint Listenelementen", e, trigger);
             }

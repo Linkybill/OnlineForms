@@ -6,14 +6,36 @@
     "version": "8.0.161.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": false,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "NOVA-SharePoint-Forms"
+      },
+      "longDescription": {
+        "default": "NOVA-SharePoint-Forms"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
     "features": [
       {
         "title": "NOVA.Forms.CustomActions",
-        "description": "Stellt Commands wie Neues Formular zur Verfügung.",
+        "description": "Stellt Commands wie Neues Formular zur Verfuegung.",
         "id": "20c3eb22-800e-477d-904d-15539ce1ddb3",
         "version": "2.0.0.8",
         "assets": {
-          "elementManifests": ["elements.xml"]
+          "elementManifests": [
+            "elements.xml",
+            "ClientSideInstance.xml"
+          ]
         }
       }
     ]

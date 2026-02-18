@@ -4,7 +4,7 @@ import { IFormFileContextProviderProps } from "./IFormFileContextProviderProps";
 import { sp } from "@pnp/sp";
 import log from "loglevel";
 import { Guid } from "@microsoft/sp-core-library";
-import { ListNames } from "../../extensions/formTemplateListActions/Constants";
+import { FormContentService } from "../services/FormContentService";
 
 // todo: Seperate context into ListItemContext, ParameterContext and ConditionContext, where COnditionContext has access to ListItemContext and ParameterContext
 export interface FileWithKey {
@@ -85,13 +85,25 @@ export const FormFileContextProvider: React.FC<IFormFileContextProviderProps> = 
 
   React.useEffect(() => {
     const loadItem = async (itemId: number) => {
-      const item = await sp.web.lists.getByTitle(ListNames.aktiveFormsListName).items.getById(itemId).select("FileRef").get();
+      const service = new FormContentService();
+      let listTitleToUse = props.listTitle;
+      if (!listTitleToUse) {
+        listTitleToUse = await service.resolveInstanceListNameByItemId(itemId);
+      }
+      if (!listTitleToUse && props.templateVersionIdentifier) {
+        listTitleToUse = await service.resolveInstanceListNameByVersion(props.templateVersionIdentifier);
+      }
+      if (!listTitleToUse) {
+        log.warn("could not resolve list title for file context");
+        return;
+      }
+      const item = await sp.web.lists.getByTitle(listTitleToUse).items.getById(itemId).select("FileRef").get();
       currentPath.current = item.FileRef;
     };
     if (props.listItemId !== undefined) {
       loadItem(props.listItemId);
     }
-  }, [props.listItemId]);
+  }, [props.listItemId, props.listTitle, props.templateVersionIdentifier]);
   const addFileBeingUploaded = (key: string, file: File) => {
     filesBeingUploaded.current = [...filesBeingUploaded.current.filter((f) => f.file.name !== file.name), { key: key, file: file }];
     filenamesBeingDeleted.current = filenamesBeingDeleted.current.filter((fileName) => fileName !== file.name);

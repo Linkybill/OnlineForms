@@ -1,4 +1,4 @@
-import "office-ui-fabric-react/dist/css/fabric.css";
+import "@fluentui/react/dist/css/fabric.css";
 import { GridConfig } from "./gridConfig";
 import * as React from "react";
 import { ClassNames } from "../../configuration/GridClassNames";

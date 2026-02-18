@@ -1,12 +1,24 @@
 {
   "@microsoft/generator-sharepoint": {
-    "version": "1.10.0",
-    "libraryName": "NOVA-SharePoint-Forms",
-    "libraryId": "2332bb35-b7e8-4fd2-8b7d-cd9909fe23e2",
-    "environment": "onprem19",
+    "whichFolder": "subdir",
+    "solutionName": "OnlineForms",
+    "environment": "spo",
     "packageManager": "npm",
-    "isCreatingSolution": false,
+    "useGulp": false,
     "componentType": "extension",
+    "template": "none",
+    "componentName": "NovaFormsAppCustomizerOnline",
+    "componentDescription": "NovaFormsAppCustomizerOnline",
+    "plusBeta": false,
+    "isCreatingSolution": false,
+    "nodeVersion": "22.22.0",
+    "sdksVersions": {},
+    "version": "1.22.2",
+    "libraryName": "online-forms",
+    "libraryId": "333cdd22-cc6c-4ac8-ba9c-89b55da8577e",
+    "solutionShortDescription": "OnlineForms description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
     "extensionType": "ApplicationCustomizer"
   }
 }

@@ -24,7 +24,7 @@ export const CurrencyField = (props: ICurrencyFieldProps): JSX.Element => {
   });
 
   const currencySignMatches = formatted.match("[^0-9\\.,\\-\\s]+");
-  const currency = currencySignMatches ? ([0] ? currencySignMatches[0] : "") : "";
+  const currency = currencySignMatches ? (currencySignMatches[0] ? currencySignMatches[0] : "") : "";
 
   const numberFieldDescription: NumberFieldDescription = {
     inputSuffix: currency,

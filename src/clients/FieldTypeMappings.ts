@@ -1,8 +1,7 @@
 import { FieldTypeNames } from "../common/listItem/FieldTypeNames";
-import { FieldType } from "./efav2Client";
 import { FieldTypeNumbers } from "./FieldTypes";
 
-export const FieldTypeMapping: { [key: string]: FieldType } = {
+export const FieldTypeMapping: { [key: string]: number } = {
   [FieldTypeNames.Text]: FieldTypeNumbers.Text,
   [FieldTypeNames.Lookup]: FieldTypeNumbers.Lookup,
   [FieldTypeNames.LookupMulti]: FieldTypeNumbers.Lookup, // assuming LookupMulti maps to Lookup
