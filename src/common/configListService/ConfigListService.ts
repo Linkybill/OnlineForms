@@ -45,6 +45,22 @@ export class ConfigListService {
     });
   };
 
+  public static getConfigItemsByPrefix = async (webInfo: IWeb, configNamePrefix: string): Promise<{ itemId: number; configName: string; config: string }[]> => {
+    const filter = "startswith(" + ConfigFieldNames.configNameFieldName + ", '" + configNamePrefix + "')";
+    const configItems = await webInfo.lists.getByTitle(ListNames.configListName).items.filter(filter)();
+    return configItems.map((item) => {
+      const config: string = item[ConfigFieldNames.configValueFieldName];
+      const configName: string = item[ConfigFieldNames.configNameFieldName];
+      const itemId = item.ID;
+      return {
+        config: config,
+        configName: configName,
+        itemId: itemId
+      };
+    });
+  };
+
+
   public static getConfigObject = async <TConfig>(webInfo: IWeb, configName: string): Promise<ConfigListItem<TConfig> | undefined> => {
     const configItems = await webInfo.lists.getByTitle(ListNames.configListName).items.filter(ConfigFieldNames.configNameFieldName + " eq '" + configName + "'")();
     if (configItems.length === 0) {

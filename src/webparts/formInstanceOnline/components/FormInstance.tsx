@@ -24,6 +24,7 @@ import { FormContentLoadingContextProvider } from "../../../common/helper/FormCo
 import { LoadingIndicatorContextProvider } from "../../../common/helper/LoadingIndicatorContext";
 import { useServerLoggingContext } from "../../../common/logging/ServerLoggingContext";
 import { Logmodel } from "../../../common/logging/LogModel";
+import { ConfigListService } from "../../../common/configListService/ConfigListService";
 const background = require("../assets/background.svg");
 
 export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHttpClient; context: BaseComponentContext; instanceId: string }): JSX.Element => {
@@ -40,29 +41,49 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
         const service = new FormContentService();
 
         const params = new URLSearchParams(location.search);
-        if (params.has(QueryParameterNames.formId)) {
-          const formId = params.get(QueryParameterNames.formId);
+        const formInstanceId = params.get(QueryParameterNames.formInstanceId) ?? params.get(QueryParameterNames.formId);
+        if (formInstanceId) {
+          const formId = formInstanceId;
           log.debug("formInstance: going to load form with id", formId);
-          let resultFromArchive = undefined;
-          const searchParams = new URLSearchParams(document.location.search);
-          if (!searchParams.has("IgnoreWorkflowStatus")) {
-            resultFromArchive = await service.loadListItemFromArchive(formId);
-          }
-          if (resultFromArchive !== undefined) {
-            const link = document.createElement("a");
-            link.href = resultFromArchive;
+          const templateIdentifier = params.get(QueryParameterNames.templateIdentifier) ?? undefined;
+          const result = await service.loadFormContent(formId, templateIdentifier, serverLoggingContext, props.spHttpClient);
+          currentListItemEtag.current = result.model.formContent.etag;
 
-            link.click();
-          } else {
-            const result = await service.loadFormContent(formId, serverLoggingContext, props.spHttpClient);
-            currentListItemEtag.current = result.model.formContent.etag;
-
-            setFormViewModel(result.model);
-            currentItemId.current = result.model.formContent.listItem.ID;
-            setError(result.error);
-          }
+          setFormViewModel(result.model);
+          currentItemId.current = result.model.formContent.listItem.ID;
+          setError(result.error);
         } else {
-          const result = await service.initializeFormViewModel(undefined);
+          let templateIdentifier = params.get(QueryParameterNames.templateIdentifier) ?? undefined;
+          if (!templateIdentifier) {
+            const sourceParam = params.get(QueryParameterNames.source);
+            if (sourceParam) {
+              try {
+                const sourceUrl = new URL(sourceParam);
+                const path = sourceUrl.pathname;
+                let listRoot = path;
+                if (path.toLowerCase().includes("/forms/")) {
+                  listRoot = path.replace(/\/Forms\/[^/]+$/i, "");
+                } else {
+                  listRoot = path.replace(/\/[^/]+$/i, "");
+                }
+                const listInfo = await sp.web.getList(listRoot).select("Title").get();
+                const listTitle = listInfo.Title as string;
+                const templateUsageConfigs = await ConfigListService.getConfigItemsByPrefix(sp.web, "TemplateUsage_");
+                const match = templateUsageConfigs.find((c) => (c.config || "").toLowerCase() === listTitle.toLowerCase());
+                if (match) {
+                  templateIdentifier = match.configName.replace(/^TemplateUsage_/, "");
+                }
+              } catch (e) {
+                log.debug("could not resolve template identifier from source", e);
+              }
+            }
+          }
+          if (!templateIdentifier) {
+            setError("Kein TemplateUsage-Mapping für die aktuelle Bibliothek gefunden.");
+            setLoading(false);
+            return;
+          }
+          const result = await service.initializeFormViewModel(templateIdentifier);
           setFormViewModel(result.model);
           setError(result.error);
         }
@@ -97,16 +118,16 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
                   <FormConfigurationContextProvider>
                     <PermissionContextProvider
                       listItemId={formViewModel === undefined ? undefined : formViewModel.formContent.listItem.ID}
-                      templateVersionIdentifier={formViewModel?.formTemplate?.templateVersionIdentifier}>
+                      templateVersionIdentifier={formViewModel?.formTemplate?.templateIdenfitier}>
                       <EditorContextProvider
                         editorModel={{ ...formViewModel.formTemplate.editorModel, customFieldDefinitions: [...formViewModel.formTemplate.editorModel.customFieldDefinitions] }}
                         isInEditMode={false}
-                        templateVersionIdentifier={formViewModel?.formTemplate?.templateVersionIdentifier}>
+                        templateVersionIdentifier={formViewModel?.formTemplate?.templateIdenfitier}>
                         <EditorContextConsumer>
                           {(editorContext) => {
                             return (
                               <>
-                                <FormFileContextProvider listItemId={formViewModel.formContent.listItem.ID} templateVersionIdentifier={formViewModel?.formTemplate?.templateVersionIdentifier}>
+                                <FormFileContextProvider listItemId={formViewModel.formContent.listItem.ID} templateVersionIdentifier={formViewModel?.formTemplate?.templateIdenfitier}>
                                   <FormFileContextConsumer>
                                     {(fileContext: IFormFileContextAccessor) => {
                                       return (
@@ -134,8 +155,9 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
                                                       filename,
                                                       editorContext.editorModel().mirroredSPListFields,
                                                       editorContext.editorModel().ignoreFieldsInItemJSON,
+                                                      editorContext.editorModel().customFieldDefinitions,
                                                       formViewModel.formTemplate.templateIdenfitier,
-                                                      formViewModel.formTemplate.templateVersionIdentifier,
+                                                      formViewModel.formTemplate.templateIdenfitier,
                                                       serverLoggingContext
                                                     );
 
@@ -162,7 +184,7 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
                                                     editorContext.editorModel().mirroredSPListFields,
                                                     editorContext.editorModel().ignoreFieldsInItemJSON,
                                                     formViewModel.formTemplate.templateIdenfitier,
-                                                    formViewModel.formTemplate.templateVersionIdentifier,
+                                                    formViewModel.formTemplate.templateIdenfitier,
                                                     serverLoggingContext
                                                   );
                                                   fileContext.resetFilesBeingUploaded();

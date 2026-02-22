@@ -37,7 +37,8 @@ export const FormConfigurationContextProvider: React.FC<{ children?: string | JS
         setSwaggerDatasourceUrls(swaggerUrls);
       } catch (e) {
         log.error("Konfiguration für SwaggerUrls konnte nicht geladen werden. Key für Konfiguration lautet: " + ConfigListService.swaggerDatasourcesConfigName, e);
-        setError("Die Konfiguration für die SwaggerUrls konnte nicht geladen werden.");
+        setSwaggerDatasourceUrls([]);
+        //setError("Die Konfiguration für die SwaggerUrls konnte nicht geladen werden.");
       }
 
       loadingIndicatorContextProvider.setIsLoading(false);

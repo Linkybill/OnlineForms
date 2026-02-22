@@ -35,9 +35,9 @@ export default class FormTemplateListActionsCommandSet extends BaseListViewComma
   public async onInit(): Promise<void> {
     const newTemplateCommand: Command = this.tryGetCommand(CommandNames.Command_NewTemplate);
     const editTemplateCommand: Command = this.tryGetCommand(CommandNames.Command_EditTemplate);
+    const isFormTemplateList = this.context.pageContext.list?.title === ListNames.formTemplateListName;
     if (newTemplateCommand) {
-      // Keep visible during debug; list filtering is handled elsewhere.
-      newTemplateCommand.visible = true;
+      newTemplateCommand.visible = isFormTemplateList;
     }
     if (editTemplateCommand) {
       editTemplateCommand.visible = false;
@@ -69,8 +69,9 @@ export default class FormTemplateListActionsCommandSet extends BaseListViewComma
   public onListViewUpdated(event: IListViewCommandSetListViewUpdatedParameters): void {
     this.selectedItemIds = event.selectedRows.map((r) => r.getValueByName("ID"));
     const editTemplateCommand: Command = this.tryGetCommand(CommandNames.Command_EditTemplate);
+    const isFormTemplateList = this.context.pageContext.list?.title === ListNames.formTemplateListName;
     if (editTemplateCommand) {
-      editTemplateCommand.visible = event.selectedRows.length === 1;
+      editTemplateCommand.visible = isFormTemplateList && event.selectedRows.length === 1;
     }
   }
 

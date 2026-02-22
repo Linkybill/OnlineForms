@@ -204,3 +204,33 @@ if ($addPageWebPartCmd) {
 } else {
   Write-Host "No cmdlet available to add web part to page. Please add web part manually to '$editorPageName.aspx'."
 }
+
+# Ensure FormInstance page exists and contains the form instance web part
+$instancePageName = "FormInstance"
+$instanceWebPartId = "e964329e-b191-48d6-b472-e7be7b36af8e"
+
+$instancePageExists = $false
+if ($getPageCmd) {
+  $instancePageExists = (Get-PnPPage -Identity $instancePageName -ErrorAction SilentlyContinue) -ne $null
+} elseif ($getClientSidePageCmd) {
+  $instancePageExists = (Get-PnPClientSidePage -Identity $instancePageName -ErrorAction SilentlyContinue) -ne $null
+}
+
+if (-not $instancePageExists) {
+  Write-Host "Creating site page '$instancePageName'..."
+  if ($addPageCmd) {
+    Add-PnPPage -Name $instancePageName -LayoutType Article | Out-Null
+  } elseif ($addClientSidePageCmd) {
+    Add-PnPClientSidePage -Name $instancePageName -LayoutType Article | Out-Null
+  }
+}
+
+if ($addPageWebPartCmd) {
+  Write-Host "Ensuring form instance web part on page '$instancePageName'..."
+  Add-PnPPageWebPart -Page $instancePageName -Component $instanceWebPartId -Section 1 -Column 1 -ErrorAction SilentlyContinue | Out-Null
+} elseif ($addClientSideWebPartCmd) {
+  Write-Host "Ensuring form instance web part on page '$instancePageName'..."
+  Add-PnPClientSideWebPart -Page $instancePageName -Component $instanceWebPartId -Section 1 -Column 1 -ErrorAction SilentlyContinue | Out-Null
+} else {
+  Write-Host "No cmdlet available to add web part to page. Please add web part manually to '$instancePageName.aspx'."
+}

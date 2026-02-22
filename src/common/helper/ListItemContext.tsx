@@ -40,6 +40,7 @@ import { SharePointCreateListItemsTriggerConfig } from "../actions/models/shareP
 import { ParameterMapping } from "../actions/models/datasources/ParameterMapping";
 import { SetRepeatedListFieldTriggerConfig } from "../actions/models/setRepeatedListField/SetRepeatedListFieldTriggerConfig";
 import { sp } from "@pnp/sp";
+import { Guid } from "@microsoft/sp-core-library";
 
 // todo: Seperate context into ListItemContext, ParameterContext and ConditionContext, where COnditionContext has access to ListItemContext and ParameterContext
 export interface IListItemAccessor {
@@ -641,7 +642,13 @@ export const ListItemContextProvider: React.FC<IListItemContextProviderProps> = 
               itemAccessor.replaceListItemAndTriggerConditions(currentListItem.current);
               try {
                 const fileNameExpression = saveFormTriggerConfig.fileNameExpression;
-                const fileNameToSet = evalLogic<string>(fileNameExpression, listItem, datasourceResults.current, props.listItem.ID);
+                let fileNameToSet = "";
+                if (fileNameExpression !== undefined && fileNameExpression !== null && fileNameExpression !== "") {
+                  fileNameToSet = evalLogic<string>(fileNameExpression, listItem, datasourceResults.current, props.listItem.ID);
+                }
+                if (fileNameToSet === undefined || fileNameToSet === null || fileNameToSet === "") {
+                  fileNameToSet = Guid.newGuid().toString();
+                }
 
                 const item = await props.onListItemSave(itemAccessor.getListItem(), fileContextProvider.filesBeingUploaded(), fileContextProvider.filenamesBeingDeleted(), fileNameToSet);
 

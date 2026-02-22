@@ -52,7 +52,7 @@ export const EditorContextProvider: React.FC<{
     if (props.templateVersionIdentifier) {
       try {
         const service = new FormContentService();
-        instanceListNameRef.current = await service.resolveInstanceListNameByVersion(props.templateVersionIdentifier);
+        instanceListNameRef.current = await service.resolveInstanceListNameByTemplateIdentifier(props.templateVersionIdentifier);
       } catch (e) {
         log.warn("could not resolve instance list name", e);
       }

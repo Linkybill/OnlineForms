@@ -40,7 +40,7 @@ export const PermissionContextProvider = (props: {
             listTitleToUse = await service.resolveInstanceListNameByItemId(props.listItemId);
           }
           if (!listTitleToUse && props.templateVersionIdentifier) {
-            listTitleToUse = await service.resolveInstanceListNameByVersion(props.templateVersionIdentifier);
+            listTitleToUse = await service.resolveInstanceListNameByTemplateIdentifier(props.templateVersionIdentifier);
           }
 
           if (!listTitleToUse) {

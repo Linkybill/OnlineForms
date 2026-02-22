@@ -75,3 +75,10 @@ This extension illustrates the following concepts:
 - [Publish SharePoint Framework applications to the Marketplace](https://docs.microsoft.com/sharepoint/dev/spfx/publish-to-marketplace-overview)
 - [Microsoft 365 Patterns and Practices](https://aka.ms/m365pnp) - Guidance, tooling, samples and open-source controls for your Microsoft 365 development
 - [Heft Documentation](https://heft.rushstack.io/)
+
+
+Working debug redirect querystring (alle CommandSets oben in der CommandBar)
+ ?loadSPFX=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests%2Ejs&noredir=true&customActions=%7B"cbacc646-277b-40b8-a35e-ed85ea649c5f"%3A%7B"location"%3A"ClientSideExtension%2EListViewCommandSet%2ECommandBar"%2C"properties"%3A%7B%7D%7D%2C"fd44cdca-5e8e-429b-91ba-bfd921035919"%3A%7B"location"%3A"ClientSideExtension%2EListViewCommandSet%2ECommandBar"%2C"properties"%3A%7B%7D%7D%7D
+
+query string für Neues Formular
+?loadSPFX=true&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests%2Ejs&noredir=true&customActions=%7B"f23a6d97-1483-46b6-9213-6f9c856abb70"%3A%7B"location"%3A"ClientSideExtension%2EListViewCommandSet%2ECommandBar"%2C"properties"%3A%7B%7D%7D%7D

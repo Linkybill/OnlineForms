@@ -3,11 +3,13 @@ import { EditorModel } from "../../components/editor/models/EditorModel";
 import { FormTemplate } from "../../../extensions/common/models/FormTemplate";
 import { sp } from "@pnp/sp";
 import { IWeb, IWebInfo } from "@pnp/sp/webs";
-import { FormTemplateFieldNames, ListNames } from "../../../extensions/formTemplateListActionsOnline/Constants";
+import { ActiveListFieldNames, FormTemplateFieldNames, ListNames } from "../../../extensions/formTemplateListActionsOnline/Constants";
 import { ErrorViewModel } from "../../models/ErrorViewModel";
 import log from "loglevel";
 import { FormTemplateConfig } from "../../configListService/models/FormTemplateConfig";
 import "@pnp/sp";
+import "@pnp/sp/fields";
+import { IList } from "@pnp/sp/lists";
 import { ConfigListItem } from "../../../extensions/common/models/ConfigListItem";
 import { ConfigListService } from "../../configListService/ConfigListService";
 import { createDefaultJSOnOrLoadBaseTemplateJSon } from "../../../extensions/common/models/DefaultEditorModel";
@@ -17,6 +19,7 @@ import { FormTemplateUpdateResult } from "./TemplateUpdateResult";
 const featureIdWhichNeedsToGetActivatedInFormSubWebs = "1fbb5a1f-3ec3-45cf-a5d5-741cce28db2f";
 const docSetFeatureId = "3bae86a2-776d-499d-9db8-fa4cdc7884f8";
 const templateUsagePrefix = "TemplateUsage_";
+const docSetContentTypeId = "0x0120D520";
 
 export const addFormTemplate = async (
   title: string,
@@ -53,9 +56,10 @@ export const addFormTemplate = async (
       [FormTemplateFieldNames.templateFieldNameGueltigVon]: template.validFrom
     });
 
-    // ensure instance library + config mapping
+    // ensure instance library + docset content type + config mapping
     const listTitle = await ensureInstanceLibraryForTemplate(template.title, template.templateVersionIdentifier);
-    await upsertTemplateUsageConfig(template.templateVersionIdentifier, listTitle, sp.web);
+    await ensureDocSetContentTypeOnList(listTitle, template.title, template.templateIdenfitier);
+    await upsertTemplateUsageConfig(template.templateIdenfitier, listTitle, sp.web);
 
     return Promise.resolve({ error: undefined, model: { ...template, id: -1 } });
   } catch (e) {
@@ -67,14 +71,14 @@ export const addFormTemplate = async (
   }
 };
 
-export const upsertTemplateUsageConfig = async (versionIdentifier: string, listTitle: string, web: IWeb): Promise<ConfigListItem<string>> => {
-  return ConfigListService.upsertConfigString(web, templateUsagePrefix + versionIdentifier, listTitle);
+export const upsertTemplateUsageConfig = async (templateIdentifier: string, listTitle: string, web: IWeb): Promise<ConfigListItem<string>> => {
+  return ConfigListService.upsertConfigString(web, templateUsagePrefix + templateIdentifier, listTitle);
 };
 
-export const getInstanceListNameByVersionIdentifier = async (versionIdentifier: string, web: IWeb): Promise<string> => {
-  const config = await ConfigListService.getConfigString(web, templateUsagePrefix + versionIdentifier);
+export const getInstanceListNameByTemplateIdentifier = async (templateIdentifier: string, web: IWeb): Promise<string> => {
+  const config = await ConfigListService.getConfigString(web, templateUsagePrefix + templateIdentifier);
   if (!config || !config.config) {
-    throw new Error("Keine Instanzliste für Template-Version gefunden: " + versionIdentifier);
+    throw new Error("Keine Instanzliste für Template gefunden: " + templateIdentifier);
   }
   return config.config;
 };
@@ -117,9 +121,9 @@ export const addNewTemplateWithNewWeb = async (
 
 export const loadFormTemplate = async (templateItemId: number): Promise<ErrorViewModel<FormTemplate>> => {
   try {
-    const item = await sp.site.rootWeb.lists.getByTitle(ListNames.formTemplateListName).items.getById(templateItemId).get();
+    const item = await sp.web.lists.getByTitle(ListNames.formTemplateListName).items.getById(templateItemId).get();
     log.debug("loaded item without expand", item);
-    const template = await sp.site.rootWeb.lists.getByTitle(ListNames.formTemplateListName).items.getById(templateItemId).file.getJSON();
+    const template = await sp.web.lists.getByTitle(ListNames.formTemplateListName).items.getById(templateItemId).file.getJSON();
     log.debug("loadFormTemplate, loaded listitem", template, item);
     return {
       error: undefined,
@@ -153,27 +157,27 @@ export const loadFormTemplate = async (templateItemId: number): Promise<ErrorVie
 
 export const loadFormTemplateByIdentifier = async (templateIdentifier: string): Promise<ErrorViewModel<FormTemplate>> => {
   const now = new Date().toISOString();
-  const formTemplates = await sp.site.rootWeb.lists
+  const formTemplates = await sp.web.lists
     .getByTitle(ListNames.formTemplateListName)
     .items.filter(
       FormTemplateFieldNames.templateIdentifier +
-        " eq '" +
-        templateIdentifier +
-        "' and ( (" +
-        FormTemplateFieldNames.templateFieldNameGueltigVon +
-        " lt '" +
-        now +
-        "' and " +
-        FormTemplateFieldNames.templateFieldNameGueltigBis +
-        " gt '" +
-        now +
-        "') or (   " +
-        FormTemplateFieldNames.templateFieldNameGueltigVon +
-        " lt '" +
-        now +
-        "' and " +
-        FormTemplateFieldNames.templateFieldNameGueltigBis +
-        " eq null  ) )"
+      " eq '" +
+      templateIdentifier +
+      "' and ( (" +
+      FormTemplateFieldNames.templateFieldNameGueltigVon +
+      " lt '" +
+      now +
+      "' and " +
+      FormTemplateFieldNames.templateFieldNameGueltigBis +
+      " gt '" +
+      now +
+      "') or (   " +
+      FormTemplateFieldNames.templateFieldNameGueltigVon +
+      " lt '" +
+      now +
+      "' and " +
+      FormTemplateFieldNames.templateFieldNameGueltigBis +
+      " eq null  ) )"
     )
     .get();
 
@@ -186,6 +190,7 @@ export const loadFormTemplateByIdentifier = async (templateIdentifier: string): 
     model: undefined
   };
 };
+
 
 export const updateTemplate = async (templateItemId: number, editorModel: EditorModel, context: any, currentETag: string): Promise<ErrorViewModel<FormTemplateUpdateResult | undefined>> => {
   try {
@@ -311,32 +316,70 @@ const ensureInstanceLibraryForTemplate = async (templateTitle: string, versionId
 
   const listRef = sp.web.lists.getByTitle(listTitle);
   await listRef.update({ ContentTypesEnabled: true });
+  await ensureFormInstanceIdentifierField(listRef);
 
-  const docSetCtName = sanitizeListTitle(templateTitle);
-  const existingCts = await sp.web.contentTypes.filter("Name eq '" + docSetCtName + "'").get();
-  let ctId: string | undefined = undefined;
-  if (existingCts.length > 0) {
-    ctId = existingCts[0].Id.StringValue;
-  } else {
-    const newCtId = "0x0120D52000" + Guid.newGuid().toString().replace(/-/g, "");
-    const addedCt = await sp.web.contentTypes.add(newCtId, docSetCtName, "Form instances for " + templateTitle, "OnlineForms");
-    ctId = addedCt.data.Id.StringValue;
+  const baseDocSetCtName = sanitizeListTitle(templateTitle);
+  const existingCts = await sp.web.contentTypes.filter("Name eq '" + baseDocSetCtName + "'").get();
+  const existingDocSetCt = existingCts.find((ct) => ct.Id?.StringValue?.startsWith(docSetContentTypeId));
+  let ctId: string | undefined = existingDocSetCt ? existingDocSetCt.Id.StringValue : undefined;
+
+  let docSetCtName = baseDocSetCtName;
+  if (!ctId && existingCts.length > 0) {
+    const suffix = templateTitle.replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
+    docSetCtName = sanitizeListTitle(`${baseDocSetCtName}_${suffix || "DocSet"}`);
+  }
+
+  if (!ctId) {
+    await createCType((await sp.web.get()).Url, docSetContentTypeId, docSetCtName, "Form instances for " + templateTitle, "OnlineForms");
+    const created = await sp.web.contentTypes.filter("Name eq '" + docSetCtName.replace(/'/g, "''") + "'").get();
+    ctId = created.length > 0 ? created[0].Id.StringValue : undefined;
+  }
+  if (!ctId || !ctId.startsWith(docSetContentTypeId)) {
+    throw new Error("Created content type is not a Document Set. CT Id: " + (ctId ?? "undefined"));
   }
 
   await listRef.contentTypes.addAvailableContentType(ctId);
 
-  // ensure FormInstanceIdentifier field
-  const fieldInternalName = "FormInstanceIdentifier";
-  const fieldExists = await sp.web.fields.filter("InternalName eq '" + fieldInternalName + "'").get();
-  if (fieldExists.length === 0) {
-    await sp.web.fields.addText(fieldInternalName, 255, { Group: "OnlineForms" });
-  }
-  const listFieldExists = await listRef.fields.filter("InternalName eq '" + fieldInternalName + "'").get();
-  if (listFieldExists.length === 0) {
-    await listRef.fields.addText(fieldInternalName, 255, { Group: "OnlineForms" });
+  return listTitle;
+};
+
+const ensureDocSetContentTypeOnList = async (listTitle: string, templateTitle: string, templateIdentifier: string): Promise<void> => {
+  await sp.site.features.add(docSetFeatureId, true);
+  const listRef = sp.web.lists.getByTitle(listTitle);
+  await listRef.update({ ContentTypesEnabled: true });
+  await ensureFormInstanceIdentifierField(listRef);
+
+  const baseCtName = sanitizeListTitle(templateTitle) || `FormInstances_${templateIdentifier}`;
+  const escapedCtName = baseCtName.replace(/'/g, "''");
+  const existingCts = await sp.web.contentTypes.filter("Name eq '" + escapedCtName + "'").get();
+  const existingDocSet = existingCts.find((ct) => ct.Id?.StringValue?.startsWith(docSetContentTypeId));
+
+  let ctName = baseCtName;
+  let ctId: string | undefined = existingDocSet ? existingDocSet.Id.StringValue : undefined;
+
+  if (!ctId && existingCts.length > 0) {
+    const suffix = (templateIdentifier || "").replace(/[^a-zA-Z0-9]/g, "").substring(0, 8);
+    ctName = sanitizeListTitle(`${baseCtName}_${suffix || "DocSet"}`);
   }
 
-  return listTitle;
+  if (!ctId) {
+    await createCType((await sp.web.get()).Url, docSetContentTypeId, ctName, "Form instances for " + templateTitle, "OnlineForms");
+    const created = await sp.web.contentTypes.filter("Name eq '" + ctName.replace(/'/g, "''") + "'").get();
+    ctId = created.length > 0 ? created[0].Id.StringValue : undefined;
+  }
+  if (!ctId || !ctId.startsWith(docSetContentTypeId)) {
+    throw new Error("Created content type is not a Document Set. CT Id: " + (ctId ?? "undefined"));
+  }
+
+  const listCts = await listRef.contentTypes.get();
+  const alreadyOnList = listCts.some((ct) => ct.StringId === ctId);
+  if (!alreadyOnList) {
+    try {
+      await listRef.contentTypes.addAvailableContentType(ctId);
+    } catch {
+      // ignore duplicate content type errors
+    }
+  }
 };
 
 const sanitizeListTitle = (title: string): string => {
@@ -346,6 +389,18 @@ const sanitizeListTitle = (title: string): string => {
   }
   return cleaned.substring(0, 255);
 };
+
+const ensureFormInstanceIdentifierField = async (listRef: IList): Promise<void> => {
+  const fieldName = ActiveListFieldNames.formInstanceIdentifier;
+  const existing = await listRef.fields
+    .filter(`InternalName eq '${fieldName}' or Title eq '${fieldName}'`)
+    .select("InternalName")
+    .get();
+  if (existing.length === 0) {
+    await listRef.fields.addText(fieldName);
+  }
+};
+
 
 const ensureTemplateIdAndWebUrlAssociationToBeRegisteredInRootWeb = async (siteRelativeUrl: string, templateIdentifier: string): Promise<ConfigListItem<string>> => {
   const configs = await getAssociatedWebUrlsForTemplateIdentifier(templateIdentifier);

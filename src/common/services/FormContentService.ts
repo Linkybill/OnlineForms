@@ -1,20 +1,30 @@
 import { IFile, IFileInfo } from "@pnp/sp/files";
-import { getAllInstanceListNames, getFormTemplateConfig, getInstanceListNameByVersionIdentifier, loadFormTemplate, loadFormTemplateByIdentifier } from "../formTemplates/services/FormTemplateService";
+import { getAllInstanceListNames, getInstanceListNameByTemplateIdentifier, loadFormTemplateByIdentifier } from "../formTemplates/services/FormTemplateService";
 import { ErrorViewModel } from "../models/ErrorViewModel";
 import { FormTemplate } from "../../extensions/common/models/FormTemplate";
-import { ActiveListFieldNames, FormTemplateFieldNames, ListNames } from "../../extensions/formTemplateListActionsOnline/Constants";
+import { ActiveListFieldNames, ListNames } from "../../extensions/formTemplateListActionsOnline/Constants";
 import { ListItem } from "../listItem/ListItem";
-import log, { error } from "loglevel";
+import log from "loglevel";
 import { sp } from "@pnp/sp";
+import "@pnp/sp/content-types";
 import { createDefaultItem, loadFieldSchema } from "../listItem/helper/ListHelper";
 import { FormViewModel } from "../../webparts/formInstanceOnline/models/FormViewModel";
-import { FormTemplateConfig } from "../configListService/models/FormTemplateConfig";
-import { ConfigListItem } from "../../extensions/common/models/ConfigListItem";
-import {} from "../formTemplates/services/FormTemplateService";
+import { } from "../formTemplates/services/FormTemplateService";
 import { FormListItem } from "../../webparts/formInstanceOnline/models/FormListItem";
 import { mapObjectToListItem } from "../listItem/mapper/ObjectToListItemMapper";
 import { ListItemToListItemFormUpdateValuesMapper } from "../components/formcomponents/mapper/ListItemToListItemFormUpdateValuesMapper";
 import { mapListItemToObject } from "../listItem/mapper/ListItemToObjectMapper";
+import { FieldDescriptionTypes } from "../listItem/types/FieldDescriptionTypes";
+import { FieldTypeNames } from "../listItem/FieldTypeNames";
+import { ChoiceFieldDescription } from "../listItem/fields/choiceField/ChoiceFieldDescription";
+import { ChoiceFieldFormatType, DateTimeFieldFormatType, FieldUserSelectionMode, UrlFieldFormatType } from "@pnp/sp/fields";
+import { NumberFieldDescription } from "../listItem/fields/numberField/NumberFieldDescription";
+import { CurrencyFieldDescription } from "../listItem/fields/currencyField/CurrencyFieldDescription";
+import { DateTimeDisplayMode, DateTimeFieldDescription } from "../listItem/fields/dateTimeField/DateTimeFieldDescription";
+import { UrlFieldDescription } from "../listItem/fields/urlField/UrlFieldDescription";
+import { UserFieldDescription } from "../listItem/fields/userField/UserFieldDescription";
+import { LookupFieldDescription } from "../listItem/fields/lookupField/LookupFieldDescription";
+import { Guid } from "@microsoft/sp-core-library";
 
 import { IListItemFormUpdateValue } from "@pnp/sp/lists";
 import axios from "axios";
@@ -28,8 +38,8 @@ const formTemplateVersionIdentifierPropertyName = "formTemplateVersionIdentifier
 export class FormContentService {
   static documentSetContentTypeId = "0x0120D520";
 
-  public resolveInstanceListNameByVersion = async (versionIdentifier: string): Promise<string> => {
-    return await this.getInstanceListNameByVersion(versionIdentifier);
+  public resolveInstanceListNameByTemplateIdentifier = async (templateIdentifier: string): Promise<string> => {
+    return await this.getInstanceListNameByTemplateIdentifier(templateIdentifier);
   };
 
   public resolveInstanceListNameByItemId = async (itemId: number): Promise<string | undefined> => {
@@ -41,7 +51,13 @@ export class FormContentService {
   };
 
   initializeFormViewModel = async (templateIdentifier: string | undefined): Promise<ErrorViewModel<FormViewModel>> => {
-    const template = templateIdentifier === undefined ? await this.loadFormTemplate() : await this.loadFormTemplateByIdentifier(templateIdentifier);
+    if (!templateIdentifier) {
+      return {
+        error: "TemplateIdentifier fehlt",
+        model: undefined
+      };
+    }
+    const template = await this.loadFormTemplateByIdentifier(templateIdentifier);
 
     if (template.error !== undefined || template.model === undefined) {
       return {
@@ -69,8 +85,10 @@ export class FormContentService {
       log.error("CreateDocumentSet: can not create document set because no DocSet content type exists in list", libraryName);
       throw new Error("DocSet content type not found in list " + libraryName);
     }
-    const contentTypeId = docSetCt.StringId;
+    return this.createDocumentsetWithContentType(webUrl, libraryName, documentSetTitle, docSetCt.StringId);
+  };
 
+  private createDocumentsetWithContentType = async (webUrl: string, libraryName: string, documentSetTitle: string, contentTypeId: string): Promise<number> => {
     return new Promise((resolve, reject) => {
       var ctx = new SP.ClientContext(webUrl);
       var web = ctx.get_web();
@@ -92,29 +110,23 @@ export class FormContentService {
             () => {
               log.debug("createDocSet: Content-type: " + docsetContentType);
               const cTypeid = docsetContentType.get_id();
-              const isCreated = SP.DocumentSet.DocumentSet.create(ctx, folder, documentSetTitle, cTypeid);
+              const createdDocSet = SP.DocumentSet.DocumentSet.create(ctx, folder, documentSetTitle, cTypeid);
 
-              console.log("createDocSet: Created: ", isCreated);
+              console.log("createDocSet: Created: ", createdDocSet);
 
+              // DocumentSet.create returns a StringResult (server-relative url)
               ctx.executeQueryAsync(
-                (sender, args: any) => {
-                  var createdDocSetUrl = args.$7_1.$1O_0["22"].m_value;
-                  const siteUrl = window.location.origin;
-
-                  // Serverrelative URL extrahieren
-                  const relativeUrl = createdDocSetUrl.replace(siteUrl, "");
-
-                  // Hole das zugehörige Listenelement des Document Sets
-                  const folder = sp.web
-                    .getFolderByServerRelativeUrl(relativeUrl)
-                    .listItemAllFields()
-                    .then((result) => {
-                      resolve(result.Id);
-                    })
-                    .catch((ex) => {
-                      log.error("document set could not be created", ex);
-                      reject(ex);
-                    });
+                async () => {
+                  try {
+                    const createdDocSetUrl = createdDocSet.get_value();
+                    const siteUrl = window.location.origin;
+                    const relativeUrl = createdDocSetUrl.replace(siteUrl, "");
+                    const folderItem = await sp.web.getFolderByServerRelativeUrl(relativeUrl).listItemAllFields();
+                    resolve(folderItem.Id);
+                  } catch (ex) {
+                    log.error("document set could not be created", ex);
+                    reject(ex);
+                  }
                 },
                 () => {
                   reject("could not create Documentset");
@@ -163,27 +175,20 @@ export class FormContentService {
     }
   };
 
-  loadListItemFromArchive = async (idenfitier: string): Promise<string | undefined> => {
-    const fileName = idenfitier + ".pdf";
-    const viewXML =
-      '<View Name="{1E26D021-1438-4090-AF4D-A0DB2B2CEF22}" Scope="Recursive" DefaultView="TRUE" MobileView="TRUE" MobileDefaultView="TRUE" Type="HTML" DisplayName="Alle Dokumente" Url="/efav2/Umsetzung IT-Maßnahme/Archiv/Forms/AllItems.aspx" Level="1" BaseViewID="1" ContentTypeID="0x" ImageUrl="/_layouts/15/images/dlicon.png?rev=43" ><Query><OrderBy><FieldRef Name="FileLeafRef" /></OrderBy> <Where> <Eq><FieldRef Name="FileLeafRef"/><Value Type="Text"><![CDATA[' +
-      fileName +
-      ']]></Value></Eq> </Where> </Query><ViewFields><FieldRef Name="DocIcon" /><FieldRef Name="LinkFilename" /><FieldRef Name="Modified" /><FieldRef Name="Editor" /><FieldRef Name="Beschreibung" /><FieldRef Name="Organisationseinheit" /><FieldRef Name="Auswahl_x0020_Ma_x00df_nahme" /></ViewFields><RowLimit Paged="TRUE">30</RowLimit><JSLink>clienttemplates.js</JSLink><XslLink Default="TRUE">main.xsl</XslLink><Toolbar Type="Standard"/></View>';
-    const archiveFiles = await sp.web.lists.getByTitle(ListNames.formArchiveListName).renderListDataAsStream({ ViewXml: viewXML });
-    if (archiveFiles.Row.length > 0) {
-      return archiveFiles.Row[0].FileRef;
-    }
-    return undefined;
-  };
 
-  loadFormContent = async (fileName: string, remoteLogger: IServerLoggingContext, client: SPHttpClient): Promise<ErrorViewModel<FormViewModel>> => {
+  loadFormContent = async (
+    formInstanceId: string,
+    templateIdentifier: string | undefined,
+    remoteLogger: IServerLoggingContext,
+    client: SPHttpClient
+  ): Promise<ErrorViewModel<FormViewModel>> => {
     try {
-      let result = await this.loadListItemByFileName(fileName, client);
+      let result = await this.loadListItemByFileName(formInstanceId, templateIdentifier, client);
 
       if (result === undefined) {
-        log.error("could not load listitem by filename", fileName);
+        log.error("could not load listitem by formInstanceId", formInstanceId);
         var logMessage: Logmodel = {
-          text: "Das Formular konnte nicht gefunden werden. Es wurde gesucht nach " + fileName,
+          text: "Das Formular konnte nicht gefunden werden. Es wurde gesucht nach " + formInstanceId,
           type: "LoadForm"
         };
         remoteLogger.logCollectedLogsAsError(logMessage);
@@ -195,7 +200,13 @@ export class FormContentService {
 
       result.formContent.listItem.markFieldsAsNotChanged();
 
-      const template = result.usedTemplateIdentifier === undefined ? await this.loadFormTemplate() : await this.loadFormTemplateByIdentifier(result.usedTemplateIdentifier);
+      if (!result.usedTemplateIdentifier) {
+        return {
+          model: undefined,
+          error: "TemplateIdentifier fehlt im Formular."
+        };
+      }
+      const template = await this.loadFormTemplateByIdentifier(result.usedTemplateIdentifier);
 
       return {
         model: {
@@ -220,13 +231,25 @@ export class FormContentService {
     fileNameToUse: string,
     mirroredFieldNames: string[],
     fieldNamesWichShouldBeIgnoredInJSON: string[],
+    fieldDefinitions: FieldDescriptionTypes[],
     formTemplateIdentifier: string,
     formTemplateVersionIdentifier: string,
     remoteLogger: IServerLoggingContext
   ): Promise<ListItem> => {
     const currentWeb = await sp.web.get();
 
-    const instanceListName = await this.getInstanceListNameByVersion(formTemplateVersionIdentifier);
+    const instanceListName = await this.getInstanceListNameByTemplateIdentifier(formTemplateIdentifier);
+    const templateResult = await this.loadFormTemplateByIdentifier(formTemplateIdentifier);
+    if (templateResult.error || !templateResult.model) {
+      throw new Error("Template konnte nicht geladen werden.");
+    }
+    const docSetContentTypeId = await this.getExistingDocumentSetContentTypeId(instanceListName);
+    for (const fieldName of mirroredFieldNames) {
+      const field = fieldDefinitions.find((f) => f.internalName === fieldName);
+      if (field) {
+        await this.ensureListFieldExists(instanceListName, field);
+      }
+    }
     const currentList = await sp.web.lists.getByTitle(instanceListName).expand("RootFolder").get();
     const listSchema = await loadFieldSchema(currentWeb.Id, currentList.Id, undefined);
     const itemWithPropsInList = new ListItem(formListItem.ID);
@@ -246,17 +269,18 @@ export class FormContentService {
     });
     const objectForJSON = mapListItemToObject(itemForJSON);
     objectForJSON[formTemplateIdentifierPropertyName] = formTemplateIdentifier;
-    objectForJSON[formTemplateVersionIdentifierPropertyName] = formTemplateVersionIdentifier;
-    objectForJSON[ActiveListFieldNames.formInstanceIdentifier] = fileNameToUse.replace(".json", "");
+    // version identifier is no longer used
+    const formInstanceId = Guid.newGuid().toString();
+    objectForJSON[ActiveListFieldNames.formInstanceIdentifier] = formInstanceId;
     const json = JSON.stringify(objectForJSON);
-    const folderName = fileNameToUse.replace(".json", "");
-    const folderItemId = await this.createDocumentset(currentWeb.Url, instanceListName, folderName);
+    const folderName = this.sanitizeListTitle(fileNameToUse || formInstanceId);
+    const folderItemId = await this.createDocumentsetWithContentType(currentWeb.Url, instanceListName, folderName, docSetContentTypeId);
     const folderPath = await sp.web.lists.getByTitle(instanceListName).items.getById(folderItemId).folder.serverRelativeUrl.get();
-    var filteItemId = await this.uploadDocumentToDocumentSet(folderPath, folderName + ".json", json);
+    var filteItemId = await this.uploadDocumentToDocumentSet(folderPath, "data.json", json);
     const updateValues = ListItemToListItemFormUpdateValuesMapper.mapListItemToToFormUpdateValues(itemWithPropsInList, false, listSchema);
     updateValues.push({ FieldName: ActiveListFieldNames.formInstanceIdentifier, FieldValue: objectForJSON[ActiveListFieldNames.formInstanceIdentifier], HasException: false, ErrorMessage: "" });
     const addValidateResult = await sp.web.lists.getByTitle(instanceListName).items.getById(folderItemId).validateUpdateListItem(updateValues);
-    var fieldsWithErrors = addValidateResult.filter((r) => r.ErrorMessage !== null && r.ErrorMessage !== undefined);
+    var fieldsWithErrors = addValidateResult.filter((r) => r.HasException == true);
     if (fieldsWithErrors.length > 0) {
       const errors = fieldsWithErrors.map((f) => f.FieldName + ":" + f.ErrorMessage);
       var logModel: Logmodel = {
@@ -327,7 +351,7 @@ export class FormContentService {
     const itemForJSON = new ListItem(formListItem.ID);
     const itemWithPropsFromSharePointOnly = new ListItem(formListItem.ID);
 
-    const instanceListName = await this.getInstanceListNameByVersion(usedTemplateVersionIdentifier);
+    const instanceListName = await this.getInstanceListNameByTemplateIdentifier(usedTemplateIdentifier);
     const resolvedActiveList = await sp.web.lists.getByTitle(instanceListName).expand("RootFolder").get();
     const resolvedWebRequest = await sp.web.get();
 
@@ -425,46 +449,120 @@ export class FormContentService {
     return formListItem;
   };
 
-  private loadFormTemplate = async (): Promise<ErrorViewModel<FormTemplate | undefined>> => {
-    let templateConfig: ConfigListItem<FormTemplateConfig> | undefined = undefined;
-
-    try {
-      templateConfig = await getFormTemplateConfig(sp.web);
-    } catch (e) {
-      log.error("could not load template due to error in config", e);
-      return {
-        error: "Formular kann nicht geladen werden",
-        model: undefined
-      };
-    }
-    if (templateConfig === undefined) {
-      log.error("could not load template due to error in config");
-      return {
-        error: "Formular kann nicht geladen werden",
-        model: undefined
-      };
-    }
-
-    let template: ErrorViewModel<FormTemplate | undefined> = {
-      error: undefined,
-      model: undefined
-    };
-
-    try {
-      template = await this.loadFormTemplateByIdentifier(templateConfig.config.templateIdentifierToUse);
-      return template;
-    } catch (e) {
-      log.error("formTemplate konnte nicht geladen werden", e);
-      return {
-        error: "Vorlage kann nicht geladen werden",
-        model: undefined
-      };
-    }
-  };
-
   private loadFormTemplateByIdentifier = async (templateIdentifier: string): Promise<ErrorViewModel<FormTemplate>> => {
     return await loadFormTemplateByIdentifier(templateIdentifier);
   };
+
+  private sanitizeListTitle = (title: string): string => {
+    const cleaned = (title || "").replace(/[\"#%*<>?\/\\{|}]/g, "").trim();
+    if (cleaned.length === 0) {
+      return "FormInstances";
+    }
+    return cleaned.substring(0, 255);
+  };
+
+  private async getExistingDocumentSetContentTypeId(listName: string): Promise<string> {
+    const listCts = await sp.web.lists.getByTitle(listName).contentTypes.get();
+    const docSetCt = listCts.find((ct) => ct.StringId?.startsWith(FormContentService.documentSetContentTypeId));
+    if (!docSetCt) {
+      throw new Error("DocSet content type not found in list " + listName);
+    }
+    return docSetCt.StringId;
+  }
+
+  private async ensureListFieldExists(listName: string, field: FieldDescriptionTypes): Promise<void> {
+    const fields = await sp.web.lists.getByTitle(listName).fields.filter(`InternalName eq '${field.internalName}'`).get();
+    if (fields.length > 0) {
+      return;
+    }
+    const list = sp.web.lists.getByTitle(listName);
+    const baseProperties = {
+      Group: "angehobene Formularfelder",
+      Description: field.description ?? "",
+      Required: field.required === true
+    };
+    switch (field.type) {
+      case FieldTypeNames.Text: {
+        await list.fields.addText(field.internalName, undefined, baseProperties);
+        break;
+      }
+      case FieldTypeNames.Note: {
+        await list.fields.addMultilineText(field.internalName, undefined, true, false, false, true, baseProperties);
+        break;
+      }
+      case FieldTypeNames.Boolean: {
+        await list.fields.addBoolean(field.internalName, baseProperties);
+        break;
+      }
+      case FieldTypeNames.Number: {
+        const numberField = field as NumberFieldDescription;
+        await list.fields.addNumber(field.internalName, undefined, undefined, baseProperties);
+        if (numberField.numberOfDecimals !== undefined) {
+          await list.fields.getByInternalNameOrTitle(field.internalName).update({ Decimals: numberField.numberOfDecimals });
+        }
+        break;
+      }
+      case FieldTypeNames.Currency: {
+        const currencyField = field as CurrencyFieldDescription;
+        await list.fields.addCurrency(field.internalName, undefined, undefined, currencyField.currencyLocaleId, baseProperties);
+        if (currencyField.numberOfDecimals !== undefined) {
+          await list.fields.getByInternalNameOrTitle(field.internalName).update({ Decimals: currencyField.numberOfDecimals });
+        }
+        break;
+      }
+      case FieldTypeNames.DateTime: {
+        const dateField = field as DateTimeFieldDescription;
+        const format = dateField.displayMode === DateTimeDisplayMode.DateAndTime ? DateTimeFieldFormatType.DateTime : DateTimeFieldFormatType.DateOnly;
+        await list.fields.addDateTime(field.internalName, format, undefined, undefined, baseProperties);
+        break;
+      }
+      case FieldTypeNames.Choice: {
+        const choiceField = field as ChoiceFieldDescription;
+        const format = choiceField.representation === "Checkbox / Radio" ? ChoiceFieldFormatType.RadioButtons : ChoiceFieldFormatType.Dropdown;
+        await list.fields.addChoice(field.internalName, choiceField.choices ?? [], format, choiceField.fillInChoiceEnabled === true, baseProperties);
+        break;
+      }
+      case FieldTypeNames.MultiChoice: {
+        const choiceField = field as ChoiceFieldDescription;
+        await list.fields.addMultiChoice(field.internalName, choiceField.choices ?? [], choiceField.fillInChoiceEnabled === true, baseProperties);
+        break;
+      }
+      case FieldTypeNames.URL: {
+        const urlField = field as UrlFieldDescription;
+        const format = urlField.isImageUrl === true ? UrlFieldFormatType.Image : UrlFieldFormatType.Hyperlink;
+        await list.fields.addUrl(field.internalName, format, baseProperties);
+        break;
+      }
+      case FieldTypeNames.User:
+      case FieldTypeNames.UserMulti: {
+        const userField = field as UserFieldDescription;
+        const mode = userField.allowGroupSelection === true ? FieldUserSelectionMode.PeopleAndGroups : FieldUserSelectionMode.PeopleOnly;
+        await list.fields.addUser(field.internalName, mode, baseProperties);
+        if (userField.canSelectMultipleItems === true || field.type === FieldTypeNames.UserMulti) {
+          await list.fields.getByInternalNameOrTitle(field.internalName).update({ AllowMultipleValues: true });
+        }
+        if (userField.groupId !== undefined) {
+          await list.fields.getByInternalNameOrTitle(field.internalName).update({ SelectionGroup: userField.groupId });
+        }
+        break;
+      }
+      case FieldTypeNames.Lookup:
+      case FieldTypeNames.LookupMulti: {
+        const lookupField = field as LookupFieldDescription;
+        await list.fields.addLookup(field.internalName, lookupField.lookupListId, lookupField.lookupField, baseProperties);
+        if (lookupField.canSelectMultipleItems === true || field.type === FieldTypeNames.LookupMulti) {
+          await list.fields.getByInternalNameOrTitle(field.internalName).update({ AllowMultipleValues: true });
+        }
+        break;
+      }
+      default: {
+        log.warn("Field is not supported for auto-creation in SharePoint", field.type);
+      }
+    }
+    if (field.displayName && field.displayName !== field.internalName) {
+      await list.fields.getByInternalNameOrTitle(field.internalName).update({ Title: field.displayName });
+    }
+  }
 
   AddDocSetVersion = async (webUrl: string, folderUrl: string, comments: string, correlationIdForRequest: string) => {
     const serviceUrl = window.location.origin + "/_vti_bin/SAPOMRESTDataService.svc/CaptureDocumentSetVersion";
@@ -515,8 +613,8 @@ export class FormContentService {
     }
   };
 
-  private getInstanceListNameByVersion = async (versionIdentifier: string): Promise<string> => {
-    return await getInstanceListNameByVersionIdentifier(versionIdentifier, sp.web);
+  private getInstanceListNameByTemplateIdentifier = async (templateIdentifier: string): Promise<string> => {
+    return await getInstanceListNameByTemplateIdentifier(templateIdentifier, sp.web);
   };
 
   private getAllInstanceListNames = async (): Promise<string[]> => {
@@ -536,7 +634,7 @@ export class FormContentService {
     return undefined;
   };
 
-  private loadListItemFromFile = async (file: IFile, client: SPHttpClient, instanceListName: string): Promise<FormListItem> => {
+  private loadListItemFromFile = async (file: IFile, client: SPHttpClient, instanceListName: string): Promise<FormListItem | undefined> => {
     const fileContent = await file.getJSON();
     const resolvedFile = await file.get();
     let item = await (await file.getItem()).select("FileRef", "FileDirRef", "FileSystemObjectType", "Folder/ServerRelativeUrl", "ID").expand("Folder").get();
@@ -555,15 +653,17 @@ export class FormContentService {
 
     var templateIdentifier = fileContent[formTemplateIdentifierPropertyName];
     var templateVersionIdentifier = fileContent[formTemplateVersionIdentifierPropertyName];
-    var template = await this.loadFormTemplate();
-
     if (templateIdentifier === undefined) {
-      templateIdentifier = template.model.templateIdenfitier;
+      return undefined;
     }
     if (templateVersionIdentifier === undefined) {
-      templateVersionIdentifier = template.model.templateVersionIdentifier;
+      templateVersionIdentifier = "";
     }
     const defaultFormViewModel = await this.initializeFormViewModel(templateIdentifier);
+    if (defaultFormViewModel.error || !defaultFormViewModel.model) {
+      log.error("could not initialize form view model", defaultFormViewModel.error);
+      return undefined;
+    }
 
     let mergedListItem: ListItem = new ListItem(item.ID);
     log.debug("loading listitem with filecontent", fileContent);
@@ -584,10 +684,10 @@ export class FormContentService {
     const provider = new SharePointListItemsProvider(web.Url, instanceListName, defaultViewFromActiveList.Title);
     var activeFormItem = await provider.loadListItem(item.ID);
     activeFormItem.getProperties().forEach((p) => {
-      var schemaFieldsFromTemplate = template.model.editorModel.customFieldDefinitions.filter((f) => f.internalName == p.description.internalName);
+      var schemaFieldsFromTemplate = defaultFormViewModel.model.formTemplate.editorModel.customFieldDefinitions.filter((f) => f.internalName == p.description.internalName);
       if (schemaFieldsFromTemplate.length > 0) {
         var schemaFieldFromTemplate = schemaFieldsFromTemplate[0];
-        var isMirrored = template.model.editorModel.mirroredSPListFields.indexOf(schemaFieldFromTemplate.internalName) > -1;
+        var isMirrored = defaultFormViewModel.model.formTemplate.editorModel.mirroredSPListFields.indexOf(schemaFieldFromTemplate.internalName) > -1;
         if (isMirrored == false) {
           mergedListItem.setValue(schemaFieldFromTemplate.internalName, activeFormItem.getProperty(schemaFieldFromTemplate.internalName).value);
         }
@@ -604,21 +704,42 @@ export class FormContentService {
     };
   };
 
-  private loadListItemByFileName = async (identifier: string, client: SPHttpClient): Promise<FormListItem | undefined> => {
-    const fileName = identifier + ".json";
+  private loadListItemByFileName = async (identifier: string, templateIdentifier: string | undefined, client: SPHttpClient): Promise<FormListItem | undefined> => {
     const viewXML =
-      '<View Scope="Recursive"><Query><OrderBy><FieldRef Name="FileLeafRef" /></OrderBy> <Where> <Eq><FieldRef Name="FileLeafRef"/><Value Type="Text"><![CDATA[' +
-      fileName +
-      ']]></Value></Eq> </Where> </Query><ViewFields><FieldRef Name="DocIcon" /><FieldRef Name="LinkFilename" /></ViewFields><RowLimit Paged="TRUE">30</RowLimit><JSLink>clienttemplates.js</JSLink><XslLink Default="TRUE">main.xsl</XslLink><Toolbar Type="Standard"/></View>';
+      '<View Scope="Recursive"><Query><OrderBy><FieldRef Name="ID" /></OrderBy> <Where> <Eq><FieldRef Name="' +
+      ActiveListFieldNames.formInstanceIdentifier +
+      '"/><Value Type="Text"><![CDATA[' +
+      identifier +
+      ']]></Value></Eq> </Where> </Query><ViewFields><FieldRef Name="ID" /><FieldRef Name="ContentTypeId" /><FieldRef Name="FileRef" /><FieldRef Name="FileDirRef" /><FieldRef Name="LinkFilename" /></ViewFields><RowLimit Paged="TRUE">30</RowLimit><JSLink>clienttemplates.js</JSLink><XslLink Default="TRUE">main.xsl</XslLink><Toolbar Type="Standard"/></View>';
 
-    const instanceLists = await this.getAllInstanceListNames();
+    const instanceLists = templateIdentifier
+      ? [await this.getInstanceListNameByTemplateIdentifier(templateIdentifier)]
+      : await this.getAllInstanceListNames();
     for (const listName of instanceLists) {
       try {
-        const filesFromList = await sp.web.lists.getByTitle(listName).renderListDataAsStream({ ViewXml: viewXML });
-        if (filesFromList.Row.length > 0) {
-          const serverRelativeFileUrl = filesFromList.Row[0].FileRef;
-          const file = sp.web.getFileByServerRelativeUrl(serverRelativeFileUrl);
-          return await this.loadListItemFromFile(file, client, listName);
+        const itemsFromList = await sp.web.lists.getByTitle(listName).renderListDataAsStream({ ViewXml: viewXML });
+        if (itemsFromList.Row.length > 0) {
+          const itemId = itemsFromList.Row[0].ID;
+          const item = await sp.web.lists
+            .getByTitle(listName)
+            .items.getById(itemId)
+            .select("Id", "ContentTypeId", "FileRef", "FileDirRef", "LinkFilename", "Folder/ServerRelativeUrl")
+            .expand("Folder")
+            .get();
+
+          if (item.ContentTypeId && item.ContentTypeId.startsWith(FormContentService.documentSetContentTypeId)) {
+            const folderUrl = item.Folder?.ServerRelativeUrl ?? item.FileRef;
+            const files = await sp.web.getFolderByServerRelativeUrl(folderUrl).files.filter("substringof('.json', Name)").get();
+            const dataFile = files.find((f) => f.Name?.toLowerCase() === "data.json") ?? files[0];
+            if (!dataFile) {
+              return undefined;
+            }
+            const file = sp.web.getFileByServerRelativeUrl(dataFile.ServerRelativeUrl);
+            return await this.loadListItemFromFile(file, client, listName);
+          } else {
+            const file = sp.web.getFileByServerRelativeUrl(item.FileRef);
+            return await this.loadListItemFromFile(file, client, listName);
+          }
         }
       } catch (e) {
         log.debug("could not load forminstance in list", { error: e, listName: listName });

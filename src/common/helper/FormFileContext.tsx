@@ -91,7 +91,7 @@ export const FormFileContextProvider: React.FC<IFormFileContextProviderProps> = 
         listTitleToUse = await service.resolveInstanceListNameByItemId(itemId);
       }
       if (!listTitleToUse && props.templateVersionIdentifier) {
-        listTitleToUse = await service.resolveInstanceListNameByVersion(props.templateVersionIdentifier);
+        listTitleToUse = await service.resolveInstanceListNameByTemplateIdentifier(props.templateVersionIdentifier);
       }
       if (!listTitleToUse) {
         log.warn("could not resolve list title for file context");

@@ -42,14 +42,15 @@ export default class FormTemplateContextMenuesCommandSet extends BaseListViewCom
     const editCommand = this.tryGetCommand(CommandNames.Command_EditTemplate);
     const createNewVersionBasedOnTemplate = this.tryGetCommand(CommandNames.COMMAND_NewVersionOfTemplate);
     const newTemplateBasedOnTemplateCommand = this.tryGetCommand(CommandNames.COMMAND_NewTemplateBasedOnTemplate);
+    const isFormTemplateList = this.context.pageContext.list?.title === ListNames.formTemplateListName;
     if (editCommand) {
-      editCommand.visible = true;
+      editCommand.visible = isFormTemplateList;
     }
     if (createNewVersionBasedOnTemplate) {
-      createNewVersionBasedOnTemplate.visible = true;
+      createNewVersionBasedOnTemplate.visible = isFormTemplateList;
     }
     if (newTemplateBasedOnTemplateCommand) {
-      newTemplateBasedOnTemplateCommand.visible = true;
+      newTemplateBasedOnTemplateCommand.visible = isFormTemplateList;
     }
 
     if (this.panelPlaceHolder === undefined) {
@@ -80,15 +81,16 @@ export default class FormTemplateContextMenuesCommandSet extends BaseListViewCom
     const editCommand = this.tryGetCommand(CommandNames.Command_EditTemplate);
     const createNewVersionBasedOnTemplate = this.tryGetCommand(CommandNames.COMMAND_NewVersionOfTemplate);
     const createNewTemplateBasedOnTemplate = this.tryGetCommand(CommandNames.COMMAND_NewTemplateBasedOnTemplate);
+    const isFormTemplateList = this.context.pageContext.list?.title === ListNames.formTemplateListName;
 
     if (editCommand) {
-      editCommand.visible = event.selectedRows.length === 1;
+      editCommand.visible = isFormTemplateList && event.selectedRows.length === 1;
     }
     if (createNewVersionBasedOnTemplate) {
-      createNewVersionBasedOnTemplate.visible = event.selectedRows.length === 1;
+      createNewVersionBasedOnTemplate.visible = isFormTemplateList && event.selectedRows.length === 1;
     }
     if (createNewTemplateBasedOnTemplate) {
-      createNewTemplateBasedOnTemplate.visible = event.selectedRows.length === 1;
+      createNewTemplateBasedOnTemplate.visible = isFormTemplateList && event.selectedRows.length === 1;
     }
   }
 

@@ -7,15 +7,33 @@
         Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
         ComponentId="f23a6d97-1483-46b6-9213-6f9c856abb70" />
     <ClientSideComponentInstance
+        Title="FormInstanceContextMenuesCommandsetOnline_Library"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="101"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="f23a6d97-1483-46b6-9213-6f9c856abb70" />
+    <ClientSideComponentInstance
         Title="FormTemplateContextMenuesOnline"
         Location="ClientSideExtension.ListViewCommandSet.CommandBar"
         ListTemplateId="100"
         Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
         ComponentId="fd44cdca-5e8e-429b-91ba-bfd921035919" />
     <ClientSideComponentInstance
+        Title="FormTemplateContextMenuesOnline_Library"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="101"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="fd44cdca-5e8e-429b-91ba-bfd921035919" />
+    <ClientSideComponentInstance
         Title="FormTemplateListActionsOnline"
         Location="ClientSideExtension.ListViewCommandSet.CommandBar"
         ListTemplateId="100"
+        Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
+        ComponentId="cbacc646-277b-40b8-a35e-ed85ea649c5f" />
+    <ClientSideComponentInstance
+        Title="FormTemplateListActionsOnline_Library"
+        Location="ClientSideExtension.ListViewCommandSet.CommandBar"
+        ListTemplateId="101"
         Properties="{&quot;sampleTextOne&quot;:&quot;One item is selected in the list.&quot;, &quot;sampleTextTwo&quot;:&quot;This command is always visible.&quot;}"
         ComponentId="cbacc646-277b-40b8-a35e-ed85ea649c5f" />
     <ClientSideComponentInstance
