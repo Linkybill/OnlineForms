@@ -526,6 +526,18 @@ export const registeredLogicFunctionChoiceDropDowns: IDropdownOption<OperationVa
     }
   },
   {
+    key: "sum",
+    text: "Sum / Aufsummieren",
+    data: {
+      helpText: "Summiert alle Zahlen in einem Array.",
+      minNumberOfParameters: 1,
+      maxNumberOfParameters: 1,
+      expectedParameters: [{ description: "Array mit Zahlen", type: "array" }],
+      operationName: "sum",
+      returnTypeName: "number"
+    }
+  },
+  {
     key: "mergeDataIntoItems",
     text: "mergeDataIntoItems",
     data: {

@@ -267,6 +267,19 @@ END:VCALENDAR`;
       return 0;
     });
 
+    logic.add_operation("sum", (values: any): number => {
+      if (!Array.isArray(values)) {
+        return 0;
+      }
+      return values.reduce((acc: number, value: any) => {
+        const numericValue = typeof value === "number" ? value : Number(value);
+        if (Number.isFinite(numericValue)) {
+          return acc + numericValue;
+        }
+        return acc;
+      }, 0);
+    });
+
     logic.add_operation("mergeDataIntoItems", (items: any[], propertyName: string, data: any): any[] => {
       if (items !== null && items !== undefined) {
         return items.map((i) => ({

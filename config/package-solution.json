@@ -3,7 +3,7 @@
   "solution": {
     "name": "NOVA-SharePoint-Forms",
     "id": "2332bb35-b7e8-4fd2-8b7d-cd9909fe23e2",
-    "version": "8.0.161.0",
+    "version": "8.0.166.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": false,
     "isDomainIsolated": false,
