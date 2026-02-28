@@ -85,13 +85,13 @@ export const FormTemplateEditorWebPart = (props: IFormTemplateEditorWebPartProps
           <>
             <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css" />(
             <>
-              <LoadingIndicatorContextProvider isLoading={isLoading} message="">
-                {isLoading === false && (
-                  <>
-                    <WithErrorsTop errors={error === undefined ? [] : [error]}></WithErrorsTop>
-                    {error === undefined && (
-                      <>
-                        <PermissionContextProvider listItemId={undefined} listTitle={ListNames.formTemplateListName}>
+              <PermissionContextProvider listItemId={undefined} listTitle={ListNames.formTemplateListName}>
+                <LoadingIndicatorContextProvider isLoading={isLoading} message="">
+                  {isLoading === false && (
+                    <>
+                      <WithErrorsTop errors={error === undefined ? [] : [error]}></WithErrorsTop>
+                      {error === undefined && (
+                        <>
                           <FormConfigurationContextProvider>
                             <Editor
                               onSaveClick={async (newModel) => {
@@ -125,12 +125,12 @@ export const FormTemplateEditorWebPart = (props: IFormTemplateEditorWebPartProps
                               }}
                               editorModel={{ ...currentTemplate.editorModel }}></Editor>
                           </FormConfigurationContextProvider>
-                        </PermissionContextProvider>
-                      </>
-                    )}
-                  </>
-                )}
-              </LoadingIndicatorContextProvider>
+                        </>
+                      )}
+                    </>
+                  )}
+                </LoadingIndicatorContextProvider>
+              </PermissionContextProvider>
             </>
             )
           </>

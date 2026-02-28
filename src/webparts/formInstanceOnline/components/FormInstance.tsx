@@ -109,16 +109,16 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
     <AppConfigurator companyName={""} solutionName={""} componentContext={props.context}>
       <CustomThemeProvider>
         <ComponentContextProvider httpClient={props.httpClient} componentContext={props.context} spHttpClient={props.spHttpClient}>
-          <LoadingIndicatorContextProvider isLoading={loading} message="Formulardaten werden geladen.">
-            <>
-              <WithErrorsTop errors={[error]}></WithErrorsTop>
+          <PermissionContextProvider
+            listItemId={formViewModel === undefined ? undefined : formViewModel.formContent.listItem.ID}
+            templateVersionIdentifier={formViewModel?.formTemplate?.templateIdenfitier}>
+            <LoadingIndicatorContextProvider isLoading={loading} message="Formulardaten werden geladen.">
+              <>
+                <WithErrorsTop errors={[error]}></WithErrorsTop>
 
-              {loading === false && formViewModel !== undefined && formViewModel.formTemplate.editorModel !== undefined && (
-                <>
-                  <FormConfigurationContextProvider>
-                    <PermissionContextProvider
-                      listItemId={formViewModel === undefined ? undefined : formViewModel.formContent.listItem.ID}
-                      templateVersionIdentifier={formViewModel?.formTemplate?.templateIdenfitier}>
+                {loading === false && formViewModel !== undefined && formViewModel.formTemplate.editorModel !== undefined && (
+                  <>
+                    <FormConfigurationContextProvider>
                       <EditorContextProvider
                         editorModel={{ ...formViewModel.formTemplate.editorModel, customFieldDefinitions: [...formViewModel.formTemplate.editorModel.customFieldDefinitions] }}
                         isInEditMode={false}
@@ -225,12 +225,12 @@ export const FormInstance = (props: { httpClient: HttpClient; spHttpClient: SPHt
                           }}
                         </EditorContextConsumer>
                       </EditorContextProvider>
-                    </PermissionContextProvider>
-                  </FormConfigurationContextProvider>
-                </>
-              )}
-            </>
-          </LoadingIndicatorContextProvider>
+                    </FormConfigurationContextProvider>
+                  </>
+                )}
+              </>
+            </LoadingIndicatorContextProvider>
+          </PermissionContextProvider>
         </ComponentContextProvider>
       </CustomThemeProvider>
     </AppConfigurator>
